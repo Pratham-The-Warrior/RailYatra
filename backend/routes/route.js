@@ -1,0 +1,43 @@
+const express = require('express');
+const router = express.Router();
+const engine = require('../engine');
+
+router.post('/', async (req, res) => {
+    const { from, to, date, max_switches, max_wait, sort_by, top_k } = req.body;
+    console.log(`[API]: Received route request from ${from} to ${to} on ${date}`);
+
+    if (!from || !to || !date) {
+        console.error("[API]: Missing required fields");
+        return res.status(400).json({ error: "Missing required fields: from, to, date" });
+    }
+
+    try {
+        console.log("[API]: Extracting station codes...");
+        const extractCode = (s) => {
+            const match = s.match(/\(([A-Z]+)\)$/);
+            return match ? match[1] : s.toUpperCase();
+        };
+
+        console.log("[API]: Sending request to engine module...");
+        const results = await engine.sendRequestToEngine({
+            from: extractCode(from),
+            to: extractCode(to),
+            date,
+            max_switches: parseInt(max_switches) || 5,
+            max_wait: parseInt(max_wait) || 1200,
+            sort_by: sort_by || 'switches',
+            top_k: parseInt(top_k) || 7
+        });
+        console.log("[API]: Received results from engine module");
+
+        if (results.error) {
+            return res.status(400).json(results);
+        }
+
+        res.json(results);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+module.exports = router;

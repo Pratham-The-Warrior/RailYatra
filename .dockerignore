@@ -1,0 +1,8 @@
+node_modules
+frontend/node_modules
+train_pdf
+.git
+.gitignore
+*.exe
+*.o
+route_engine
