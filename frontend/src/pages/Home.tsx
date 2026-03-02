@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Route, SearchParams } from "@/types";
 import { SearchForm } from "@/components/SearchForm";
 import { RouteCard } from "@/components/RouteCard";
-import { Ticket, Clock, Armchair, UtensilsCrossed, History, ArrowRight, Star } from "lucide-react";
+import { Calendar, History, ArrowRight, Star } from "lucide-react";
 
 const STORAGE_KEY = 'railyatra_recent_searches';
 
@@ -15,7 +15,11 @@ interface RecentSearch {
     date: string;
 }
 
-export function Home() {
+interface HomeProps {
+    onNavigate?: (page: 'home' | 'schedules') => void;
+}
+
+export function Home({ onNavigate }: HomeProps) {
     const [routes, setRoutes] = useState<Route[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -114,7 +118,7 @@ export function Home() {
                             transition={{ duration: 0.5, delay: 0.15 }}
                             className="text-lg md:text-xl text-slate-500 font-normal max-w-2xl mx-auto leading-relaxed text-balance"
                         >
-                            Fast, secure, and intuitive booking for the modern Indian commuter.
+                            Fast and Convenient travel for the modern Indian commuter.
                         </motion.p>
                     </div>
 
@@ -138,33 +142,15 @@ export function Home() {
             >
                 <h2 className="text-xl text-slate-700 font-medium mb-6">Quick Services</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start">
-                        <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
-                            <Ticket size={20} />
+                    <div
+                        onClick={() => onNavigate?.('schedules')}
+                        className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start group"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <Calendar size={20} />
                         </div>
-                        <h3 className="font-semibold text-slate-800 text-lg mb-1">PNR Status</h3>
-                        <p className="text-xs text-slate-400">Check booking details</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start">
-                        <div className="w-10 h-10 rounded-xl bg-green-100 text-green-600 flex items-center justify-center mb-4">
-                            <Clock size={20} />
-                        </div>
-                        <h3 className="font-semibold text-slate-800 text-lg mb-1">Live Status</h3>
-                        <p className="text-xs text-slate-400">Track train in real-time</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start">
-                        <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
-                            <Armchair size={20} />
-                        </div>
-                        <h3 className="font-semibold text-slate-800 text-lg mb-1">Availability</h3>
-                        <p className="text-xs text-slate-400">Seat finder assistant</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start">
-                        <div className="w-10 h-10 rounded-xl bg-green-100 text-green-600 flex items-center justify-center mb-4">
-                            <UtensilsCrossed size={20} />
-                        </div>
-                        <h3 className="font-semibold text-slate-800 text-lg mb-1">e-Catering</h3>
-                        <p className="text-xs text-slate-400">Order food on track</p>
+                        <h3 className="font-semibold text-slate-800 text-lg mb-1 group-hover:text-blue-600 transition-colors">Train Schedules</h3>
+                        <p className="text-xs text-slate-400">View timetable and routes</p>
                     </div>
                 </div>
             </motion.section>

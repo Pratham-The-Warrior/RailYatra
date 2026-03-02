@@ -10,7 +10,7 @@ export const Footer: React.FC = () => {
                     <div className="col-span-2 md:col-span-1 space-y-5">
                         <div className="flex items-center gap-2.5">
                             <img
-                                src="/favicon.png"
+                                src="/logo2.png"
                                 alt="RailYatra Logo"
                                 className="w-9 h-9 object-contain rounded-lg"
                             />
@@ -37,8 +37,6 @@ export const Footer: React.FC = () => {
                         <ul className="space-y-3 text-sm text-slate-400 font-medium">
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Home</a></li>
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Train Schedule</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">PNR Status</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Seat Availability</a></li>
                         </ul>
                     </div>
 

@@ -74,13 +74,15 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
                 </div>
 
                 {/* Swap Button */}
-                <button
-                    type="button"
-                    onClick={handleSwap}
-                    className="absolute left-[calc(50%-1rem)] top-[calc(50%+0.5rem)] -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0 w-10 h-10 bg-white border border-orange-200 rounded-full shadow-sm flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-colors z-20 shrink-0 mx-auto md:-mx-3 mb-2"
-                >
-                    <ArrowRightLeft size={16} />
-                </button>
+                <div className="relative w-full md:w-auto flex justify-center items-center h-0 md:h-auto z-20 md:-mx-3 md:mb-2">
+                    <button
+                        type="button"
+                        onClick={handleSwap}
+                        className="w-10 h-10 bg-white border border-slate-200 md:border-orange-200 rounded-full shadow-md flex items-center justify-center text-orange-500 hover:bg-orange-50 transition-transform hover:scale-105 shrink-0 rotate-90 md:rotate-0"
+                    >
+                        <ArrowRightLeft size={16} />
+                    </button>
+                </div>
 
                 {/* To Field */}
                 <div className="flex-1 w-full space-y-2">

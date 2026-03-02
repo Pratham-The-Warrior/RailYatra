@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
     Search, Calendar, FileText,
-    ArrowRight, Wifi, UtensilsCrossed, Plug, Cross, Activity, HelpCircle,
+    ArrowRight, ArrowLeft, Wifi, UtensilsCrossed, Plug, Cross, Activity, HelpCircle,
     Train, Sparkles, Clock, MapPin, Lightbulb
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -75,7 +75,11 @@ const popularTrains = [
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  MAIN COMPONENT                                                        */
 /* ═══════════════════════════════════════════════════════════════════════ */
-export const Schedules: React.FC = () => {
+interface SchedulesProps {
+    onNavigate?: (page: 'home' | 'schedules') => void;
+}
+
+export const Schedules: React.FC<SchedulesProps> = ({ onNavigate }) => {
     const [trainNumber, setTrainNumber] = useState('');
     const [loading, setLoading] = useState(false);
     const [schedule, setSchedule] = useState<TrainSchedule | null>(null);
@@ -208,14 +212,27 @@ export const Schedules: React.FC = () => {
     /* ═══════════════════════════════════════════════════════════════════ */
     if (!schedule && !loading) {
         return (
-            <div className="min-h-screen pt-20 md:pt-24 pb-12 md:pb-20 bg-[#f5f6f8]">
+            <div className="min-h-screen pb-12 md:pb-20 bg-[#f5f6f8]">
                 {/* ═══ HERO ═══ */}
-                <div className="relative overflow-hidden">
+                <div className="relative overflow-hidden pt-24 md:pt-32">
                     {/* Subtle gradient bg */}
                     <div className="absolute inset-0 bg-gradient-to-b from-white via-white to-transparent" />
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-orange-50/80 to-transparent rounded-full blur-3xl opacity-60" />
 
-                    <div className="relative max-w-[1120px] mx-auto px-4 md:px-5 pt-6 md:pt-10 pb-10 md:pb-14 text-center">
+                    {/* ── Top bar: back ── */}
+                    {onNavigate && (
+                        <div className="max-w-[1120px] mx-auto px-4 md:px-5 relative z-10 w-full flex justify-start mb-4 md:mb-6">
+                            <button
+                                onClick={() => onNavigate('home')}
+                                className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-200 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 text-slate-600 font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm active:scale-[0.97]"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Back to Home
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="relative max-w-[1120px] mx-auto px-4 md:px-5 pb-10 md:pb-14 text-center">
                         {/* Title */}
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
@@ -251,7 +268,7 @@ export const Schedules: React.FC = () => {
                                     type="text"
                                     value={trainNumber}
                                     onChange={e => setTrainNumber(e.target.value)}
-                                    placeholder="Enter train name or 5-digit number (e.g. 12002)"
+                                    placeholder="Enter 5-digit number (e.g. 12002)"
                                     className="w-full bg-white border border-slate-200 rounded-xl md:rounded-2xl py-4 md:py-5 pl-11 md:pl-14 pr-20 md:pr-36 text-sm md:text-base font-medium text-slate-900 shadow-lg shadow-slate-200/40 focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all placeholder:text-slate-400"
 
                                 />

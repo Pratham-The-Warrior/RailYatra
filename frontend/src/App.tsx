@@ -12,9 +12,9 @@ function App() {
             <Navbar onNavigate={setCurrentPage} currentPage={currentPage} />
 
             {currentPage === 'schedules' ? (
-                <Schedules />
+                <Schedules onNavigate={setCurrentPage} />
             ) : (
-                <Home />
+                <Home onNavigate={setCurrentPage} />
             )}
 
             <Footer />
