@@ -107,7 +107,7 @@ Calculates routes between two stations.
 ### `GET /api/stations`
 Autocomplete endpoint for station search. Returns top 10 matches.
 
-### `GET /api/category/:categoryId`
+### `GET /api/category/:category`
 Fetches a list of trains for a specific collection (e.g., `vandebharat`, `tejas`). Returns premium route chart data.
 
 ### `GET /api/schedule/:trainNumber`
