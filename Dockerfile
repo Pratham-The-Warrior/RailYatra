@@ -29,13 +29,13 @@ COPY --from=engine-builder /app/engine/route_engine /app/engine/route_engine
 
 # Copy all built assets and source
 WORKDIR /app
-COPY master_train_data.json ./master_train_data.json
+COPY master_train_data*.json ./
 COPY stations.json ./stations.json
 COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist/ ./frontend/dist/
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
 # Command to run
 WORKDIR /app/backend
