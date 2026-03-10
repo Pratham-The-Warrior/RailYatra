@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
-    onNavigate?: (page: 'home' | 'schedules') => void;
+    onNavigate?: (page: 'home' | 'schedules' | 'category-routes') => void;
     currentPage?: string;
 }
 

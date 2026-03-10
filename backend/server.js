@@ -13,11 +13,13 @@ const routeRouter = require('./routes/route');
 const stationsRouter = require('./routes/stations');
 const scheduleRouter = require('./routes/schedule');
 const pdfRouter = require('./routes/pdf');
+const categoryRouter = require('./routes/category');
 
 app.use('/api/route', routeRouter);
 app.use('/api/stations', stationsRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/pdf', pdfRouter);
+app.use('/api/category', categoryRouter);
 
 app.get('/api/health', (req, res) => {
     res.json({

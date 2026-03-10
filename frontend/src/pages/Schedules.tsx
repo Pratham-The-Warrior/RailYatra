@@ -76,15 +76,17 @@ const popularTrains = [
 /*  MAIN COMPONENT                                                        */
 /* ═══════════════════════════════════════════════════════════════════════ */
 interface SchedulesProps {
-    onNavigate?: (page: 'home' | 'schedules') => void;
+    onNavigate?: (page: 'home' | 'schedules' | 'category-routes') => void;
+    initialTrainNumber?: string | null;
 }
 
-export const Schedules: React.FC<SchedulesProps> = ({ onNavigate }) => {
+export const Schedules: React.FC<SchedulesProps> = ({ onNavigate, initialTrainNumber }) => {
     const [trainNumber, setTrainNumber] = useState('');
     const [loading, setLoading] = useState(false);
     const [schedule, setSchedule] = useState<TrainSchedule | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [recents, setRecents] = useState<RecentSearch[]>(loadRecents());
+    const initialFetchDone = useRef(false);
 
     const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -126,6 +128,15 @@ export const Schedules: React.FC<SchedulesProps> = ({ onNavigate }) => {
             setLoading(false);
         }
     };
+
+    /* ── initial fetch ── */
+    React.useEffect(() => {
+        if (initialTrainNumber && !initialFetchDone.current) {
+            setTrainNumber(initialTrainNumber);
+            fetchSchedule(initialTrainNumber);
+            initialFetchDone.current = true;
+        }
+    }, [initialTrainNumber]);
 
     const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); fetchSchedule(trainNumber); };
     const handleBack = () => { setSchedule(null); setError(null); };
@@ -268,7 +279,7 @@ export const Schedules: React.FC<SchedulesProps> = ({ onNavigate }) => {
                                     type="text"
                                     value={trainNumber}
                                     onChange={e => setTrainNumber(e.target.value)}
-                                    placeholder="Enter 5-digit number (e.g. 12002)"
+                                    placeholder="Enter Train-Number (e.g. 12002)"
                                     className="w-full bg-white border border-slate-200 rounded-xl md:rounded-2xl py-4 md:py-5 pl-11 md:pl-14 pr-20 md:pr-36 text-sm md:text-base font-medium text-slate-900 shadow-lg shadow-slate-200/40 focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all placeholder:text-slate-400"
 
                                 />

@@ -26,9 +26,9 @@ docker build -t railyatra .
 
 ### Step 3: Run the Container
 ```bash
-docker run -p 3001:3001 railyatra
+docker run -p 3000:3000 railyatra
 ```
-Visit `http://localhost:3001` to use the application.
+Visit `http://localhost:3000` to use the application.
 
 ---
 
@@ -44,7 +44,7 @@ Visit `http://localhost:3001` to use the application.
 2.  **Connect to Platform**: Point your cloud provider to your GitHub repo.
 3.  **Automatic Detection**: Most platforms (like Railway or Render) will detect the `Dockerfile` in the root and build it automatically.
 4.  **Environment Variables**: 
-    - `PORT`: Default 3001.
+    - `PORT`: Default 3000.
     - `PDF_BASE_URL`: (Optional) If you are hosting PDFs externally (e.g., S3/R2), set this to the base URL (e.g., `https://storage.railyatra.in/pdfs`). The backend will automatically redirect download requests to this URL.
 
 ---

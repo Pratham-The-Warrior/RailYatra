@@ -4,9 +4,16 @@
 
 ---
 
+- **Live Station Search**: Autocomplete search for stations.
+- **Premium Collections**: Dedicated high-end visual charts for special train categories like Vande Bharat, Tejas, and Gatiman.
+- **Modular Data System**: Easily add new train categories by simply adding JSON data files.
+
+---
+
 ## 🚀 Key Features
 
 - **Blazing Fast Engine**: Layered multi-pass Dijkstra written in C++17, finding the best 7 routes in under 5ms.
+- **Premium Route Charts**: Modular "Railway Chart" system for special train categories with sequential serial numbers and detailed timings.
 - **Multi-Criteria Optimization**: Sort routes by travel time, total distance, or minimum switches.
 - **Best 7 Routes**: Returns up to 7 diverse routes — direct trains first, then 1-transfer, then 2-transfer, ranked by total travel time within each tier.
 - **Intelligent Transfers**: Validates connecting times at junctions (minimum 30 min buffer, max wait limit configurable).
@@ -71,14 +78,14 @@ Ensure `master_train_data.json` is present in the project root. This file contai
 ```bash
 cd backend
 npm install
-node server.js
+node server.js # Starts on Port 3000
 ```
 
-### 3. Start the Frontend
+### 4. Start the Frontend
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev # Starts on Port 5173
 ```
 
 ---
@@ -99,6 +106,9 @@ Calculates routes between two stations.
 
 ### `GET /api/stations`
 Autocomplete endpoint for station search. Returns top 10 matches.
+
+### `GET /api/category/:categoryId`
+Fetches a list of trains for a specific collection (e.g., `vandebharat`, `tejas`). Returns premium route chart data.
 
 ### `GET /api/schedule/:trainNumber`
 Fetches the full schedule for a specific train. Returns station stops, arrival/departure times, and operating days.

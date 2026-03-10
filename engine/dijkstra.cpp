@@ -47,6 +47,7 @@ static RouteResult reconstructRoute(
     rr.switches        = trace[traceIdx].switches;
     rr.totalDistanceKm = 0;
     rr.totalTimeMin    = 0;
+    rr.totalBufferMin  = 0;
 
     std::vector<Leg> legs;
     int ptr = traceIdx;
@@ -99,6 +100,11 @@ static RouteResult reconstructRoute(
 
         rr.totalTimeMin = lastArr - firstDep;
         if (rr.totalTimeMin < 0) rr.totalTimeMin = 0;
+
+        int totalTravelTime = 0;
+        for (const auto& leg : rr.legs) totalTravelTime += leg.travelTimeMin;
+        rr.totalBufferMin = rr.totalTimeMin - totalTravelTime;
+        if (rr.totalBufferMin < 0) rr.totalBufferMin = 0;
     }
 
     rr.totalTimeFormatted = TimeUtils::formatDuration(rr.totalTimeMin);
@@ -298,7 +304,9 @@ static std::vector<RouteResult> runDijkstraPass(
 
     std::sort(results.begin(), results.end(),
         [](const RouteResult& a, const RouteResult& b) {
-            return a.totalTimeMin < b.totalTimeMin;
+            if (a.totalTimeMin != b.totalTimeMin)
+                return a.totalTimeMin < b.totalTimeMin;
+            return a.totalBufferMin < b.totalBufferMin;
         });
 
     return results;
@@ -354,6 +362,7 @@ json DijkstraSolver::toJson(const std::vector<RouteResult>& results) {
         json route;
         route["total_distance_km"]    = r.totalDistanceKm;
         route["total_time_min"]       = r.totalTimeMin;
+        route["total_buffer_min"]     = r.totalBufferMin;
         route["total_time_formatted"] = r.totalTimeFormatted;
         route["switches"]             = r.switches;
 

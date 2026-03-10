@@ -82,8 +82,9 @@ If a popped node is not the destination and `switches < passMax`:
 When the destination is popped from the PQ:
 1. Walk `parentIdx` chain back to root → collect legs in reverse → reverse to get forward order.
 2. Compute `totalTimeMin` = last arrival − first departure (absolute minutes).
-3. Compute `totalDistanceKm` = Σ leg distances.
-4. Generate `routeFingerprint` = `"trainNumber:fromCode->toCode|"` for each leg.
+3. Compute `totalBufferMin` = `totalTimeMin` − Σ `leg.travelTimeMin`.
+4. Compute `totalDistanceKm` = Σ leg distances.
+5. Generate `routeFingerprint` = `"trainNumber:fromCode->toCode|"` for each leg.
 5. Skip if fingerprint already in `seenFingerprints` (shared across passes).
 6. Otherwise, add to pass results.
 
@@ -95,7 +96,7 @@ When the destination is popped from the PQ:
 |---|---|
 | Max results | ≤ `topK` (default 7) |
 | Transfer ordering | Non-decreasing: all direct routes before 1-transfer, etc. |
-| Within-tier ordering | Sorted by `totalTimeMin` ascending |
+| Within-tier ordering | Sorted by `totalTimeMin` ascending, then `totalBufferMin` ascending |
 | Duplicates | None — fingerprint-deduplicated across all passes |
 | Trace memory | Hard-capped at `MAX_TRACE = 500,000` nodes |
 

@@ -24,6 +24,7 @@ struct Leg {
 struct RouteResult {
     int totalDistanceKm;
     int totalTimeMin;
+    int totalBufferMin;
     std::string totalTimeFormatted;
     int switches;
     std::vector<Leg> legs;

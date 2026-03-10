@@ -16,7 +16,11 @@ interface RecentSearch {
 }
 
 interface HomeProps {
-    onNavigate?: (page: 'home' | 'schedules') => void;
+    onNavigate?: (
+        page: 'home' | 'schedules' | 'category-routes',
+        trainNumber?: string,
+        category?: { id: string; name: string }
+    ) => void;
 }
 
 export function Home({ onNavigate }: HomeProps) {
@@ -96,10 +100,12 @@ export function Home({ onNavigate }: HomeProps) {
     return (
         <>
             {/* Hero Section */}
-            <section className="relative pt-32 md:pt-40 pb-16 md:pb-24 px-4 overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-[600px] bg-gradient-to-b from-[#fbfafa] via-[#eef2f3] to-transparent pointer-events-none" />
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[700px] rounded-full bg-orange-50/50 blur-3xl pointer-events-none" />
-                <div className="absolute top-[10%] right-[-10%] w-[50%] h-[600px] rounded-full bg-green-50/50 blur-3xl pointer-events-none" />
+            <section className="relative pt-32 md:pt-40 pb-16 md:pb-24 px-4">
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 inset-x-0 h-[600px] bg-gradient-to-b from-[#fbfafa] via-[#eef2f3] to-transparent" />
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[700px] rounded-full bg-orange-50/50 blur-3xl" />
+                    <div className="absolute top-[10%] right-[-10%] w-[50%] h-[600px] rounded-full bg-green-50/50 blur-3xl" />
+                </div>
 
                 <div className="relative max-w-7xl mx-auto flex flex-col items-center">
                     <div className="space-y-6 text-center mb-12 relative z-10 w-full">
@@ -218,6 +224,7 @@ export function Home({ onNavigate }: HomeProps) {
                         tag="Fastest"
                         tagColor="bg-green-100 text-green-700"
                         rating="4.9"
+                        onViewRoutes={() => onNavigate?.('category-routes', undefined, { id: 'vandebharat', name: 'Vande Bharat' })}
                     />
                     <SpecialTrainCard
                         title="Tejas Premium"
@@ -226,6 +233,7 @@ export function Home({ onNavigate }: HomeProps) {
                         tag="Luxury"
                         tagColor="bg-blue-100 text-blue-700"
                         rating="4.7"
+                        onViewRoutes={() => onNavigate?.('category-routes', undefined, { id: 'tejas', name: 'Tejas' })}
                     />
                     <SpecialTrainCard
                         title="Gatiman Express"
@@ -234,6 +242,7 @@ export function Home({ onNavigate }: HomeProps) {
                         tag="Business"
                         tagColor="bg-orange-100 text-orange-700"
                         rating="4.8"
+                        onViewRoutes={() => onNavigate?.('category-routes', undefined, { id: 'gatiman', name: 'Gatiman' })}
                     />
                 </div>
             </section>
@@ -287,9 +296,10 @@ interface SpecialTrainCardProps {
     tag: string;
     tagColor: string;
     rating: string;
+    onViewRoutes?: () => void;
 }
 
-function SpecialTrainCard({ title, description, image, tag, tagColor, rating }: SpecialTrainCardProps) {
+function SpecialTrainCard({ title, description, image, tag, tagColor, rating, onViewRoutes }: SpecialTrainCardProps) {
     return (
         <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 flex flex-col">
             <div className="h-56 bg-slate-200 w-full relative overflow-hidden group">
@@ -305,7 +315,12 @@ function SpecialTrainCard({ title, description, image, tag, tagColor, rating }: 
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
                 <p className="text-sm text-slate-500 mb-6 flex-1">{description}</p>
                 <div className="flex gap-2">
-                    <button className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 rounded-xl transition-colors">View Routes</button>
+                    <button
+                        onClick={onViewRoutes}
+                        className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 rounded-xl transition-colors"
+                    >
+                        View Routes
+                    </button>
                     <button className="w-12 h-12 flex items-center justify-center border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-red-500 transition-colors">
                         <HeartIcon />
                     </button>
