@@ -12,7 +12,7 @@ The algorithm maps out a time-expanded state-space graph where nodes represent b
 ## 1. Layered Pass Strategy (Top-Level Architecture)
 
 ```
-findRoutes(from, to, date, maxSwitches=5, maxWaitMin=1200, topK=7, sortMode=TIME):
+findRoutes(from, to, date, maxSwitches=5, maxWaitMin=600, topK=7, sortMode=TIME):
   seenFingerprints = {}            // shared across all passes (deduplication)
   allResults       = []
 

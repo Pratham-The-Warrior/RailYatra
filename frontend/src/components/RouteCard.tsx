@@ -103,7 +103,7 @@ export const RouteCard: React.FC<RouteCardProps> = ({ route, index }) => {
 
                             {/* Waiting info if not last leg */}
                             {i < route.legs.length - 1 && (() => {
-                                // max_wait is capped at 1200 min (20hrs) < 1440 min (24hrs),
+                                // max_wait is capped at 600 min (10hrs) < 1440 min (24hrs),
                                 // so adding 1440 once is always correct for any valid transfer.
                                 const parseTime = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
                                 const arrMin = parseTime(leg.arrival_time);

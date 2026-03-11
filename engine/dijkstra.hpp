@@ -41,7 +41,7 @@ public:
         const std::string& toCode,
         const std::string& dateStr,
         int maxSwitches   = 5,
-        int maxWaitMin    = 1200,
+        int maxWaitMin    = 600,
         int topK          = 7,
         SortMode sortMode = SortMode::TIME
     );

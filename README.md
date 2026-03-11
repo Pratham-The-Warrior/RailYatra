@@ -100,7 +100,7 @@ Calculates routes between two stations.
 | `to` | `String` | Destination station name or code | (Required) |
 | `date` | `String` | Journey date (YYYY-MM-DD) | (Required) |
 | `sort_by` | `String` | `time`, `distance`, or `switches` | `switches` |
-| `max_wait` | `Int` | Max wait time at transfers (minutes) | `1200` (20h) |
+| `max_wait` | `Int` | Max wait time at transfers (minutes) | `600` (10h) |
 | `max_switches`| `Int` | Max number of transfers allowed | `5` |
 | `top_k` | `Int` | Number of results to return | `7` |
 

@@ -14,7 +14,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
         to: '',
         date: new Date().toISOString().split('T')[0],
         max_switches: 5,
-        max_wait: 1200,
+        max_wait: 600,
         sort_by: 'switches',
         top_k: 7
     });
