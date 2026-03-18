@@ -16,7 +16,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
         max_switches: 5,
         max_wait: 600,
         sort_by: 'switches',
-        top_k: 7
+        top_k: 10
     });
 
     const [fromDisplay, setFromDisplay] = useState('');

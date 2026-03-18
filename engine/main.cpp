@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
 
             int maxSwitches = req.value("max_switches", 4);
             int maxWait     = req.value("max_wait", 600);
-            int topK        = req.value("top_k", 7);
+            int topK        = req.value("top_k", 10);
 
             // Sort mode
             SortMode sortMode = SortMode::TIME;

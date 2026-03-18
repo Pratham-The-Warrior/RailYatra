@@ -179,7 +179,7 @@ export function Home({ onNavigate }: HomeProps) {
                                 <div
                                     key={idx}
                                     onClick={() => handleSearch(
-                                        { from: r.from, to: r.to, date: r.date, max_switches: 4, max_wait: 600, sort_by: 'switches', top_k: 7 },
+                                        { from: r.from, to: r.to, date: r.date, max_switches: 4, max_wait: 600, sort_by: 'switches', top_k: 10 },
                                         r.fromDisplay,
                                         r.toDisplay
                                     )}

@@ -42,7 +42,7 @@ public:
         const std::string& dateStr,
         int maxSwitches   = 5,
         int maxWaitMin    = 600,
-        int topK          = 7,
+        int topK          = 10,
         SortMode sortMode = SortMode::TIME
     );
 

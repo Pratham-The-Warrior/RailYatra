@@ -5,14 +5,14 @@ This document details the logic and architecture of the routing engine (implemen
 ## Overview
 The routing engine uses a **Layered Multi-Pass Dijkstra** to find valid train connections between two railway stations. Because train schedules involve time dependencies (trains only depart at certain times on specific days) and complex user constraints (maximum transfers, specific connection buffer times), standard single-pass Dijkstra isn't sufficient.
 
-The algorithm maps out a time-expanded state-space graph where nodes represent being at a **Specific Station**, at a **Specific Absolute Time**, with a **Specific Number of Previous Switches**. To guarantee that direct routes always appear before 1-transfer routes (and 1-transfer before 2-transfer, etc.), the engine runs **one independent Dijkstra pass per transfer level**, collecting results until 7 routes are found.
+The algorithm maps out a time-expanded state-space graph where nodes represent being at a **Specific Station**, at a **Specific Absolute Time**, with a **Specific Number of Previous Switches**. To guarantee that direct routes always appear before 1-transfer routes (and 1-transfer before 2-transfer, etc.), the engine runs **one independent Dijkstra pass per transfer level**, collecting results until 10 routes are found.
 
 ---
 
 ## 1. Layered Pass Strategy (Top-Level Architecture)
 
 ```
-findRoutes(from, to, date, maxSwitches=5, maxWaitMin=600, topK=7, sortMode=TIME):
+findRoutes(from, to, date, maxSwitches=5, maxWaitMin=600, topK=10, sortMode=TIME):
   seenFingerprints = {}            // shared across all passes (deduplication)
   allResults       = []
 
@@ -25,11 +25,6 @@ findRoutes(from, to, date, maxSwitches=5, maxWaitMin=600, topK=7, sortMode=TIME)
 
   return allResults
 ```
-
-**Why this is necessary:**  
-The old single-pass approach stored only *one* best cost per `(station, switches)` in its pruning table. This meant only one direct train to the destination could ever be found per run — all others were pruned before they reached the PQ. The layered approach gives each transfer tier its own independent search, allowing multiple direct (or N-transfer) trains to be discovered correctly.
-
----
 
 ## 2. Graph State and Priority Queue
 
@@ -94,7 +89,7 @@ When the destination is popped from the PQ:
 
 | Property | Guarantee |
 |---|---|
-| Max results | ≤ `topK` (default 7) |
+| Max results | ≤ `topK` (default 10) |
 | Transfer ordering | Non-decreasing: all direct routes before 1-transfer, etc. |
 | Within-tier ordering | Sorted by `totalTimeMin` ascending, then `totalBufferMin` ascending |
 | Duplicates | None — fingerprint-deduplicated across all passes |

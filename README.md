@@ -12,10 +12,10 @@
 
 ## 🚀 Key Features
 
-- **Blazing Fast Engine**: Layered multi-pass Dijkstra written in C++17, finding the best 7 routes in under 5ms.
+- **Blazing Fast Engine**: Layered multi-pass Dijkstra written in C++17, finding the best 10 routes in under 5ms.
 - **Premium Route Charts**: Modular "Railway Chart" system for special train categories with sequential serial numbers and detailed timings.
 - **Multi-Criteria Optimization**: Sort routes by travel time, total distance, or minimum switches.
-- **Best 7 Routes**: Returns up to 7 diverse routes — direct trains first, then 1-transfer, then 2-transfer, ranked by total travel time within each tier.
+- **Best 10 Routes**: Returns up to 10 diverse routes — direct trains first, then 1-transfer, then 2-transfer, ranked by total travel time within each tier.
 - **Intelligent Transfers**: Validates connecting times at junctions (minimum 30 min buffer, max wait limit configurable).
 - **Premium UI**: Modern "RailPath" aesthetic with glassmorphism, smooth animations, and a clean white theme.
 
@@ -26,10 +26,10 @@
 The core navigation engine implements a **Layered Multi-Pass Dijkstra** optimized for scheduled transportation networks. See [`logic.md`](logic.md) for the full technical breakdown.
 
 ### 1. Layered Pass Strategy
-The engine runs one independent Dijkstra pass per transfer level (0 → 1 → 2 → … up to `maxSwitches`), stopping as soon as 7 results are collected:
+The engine runs one independent Dijkstra pass per transfer level (0 → 1 → 2 → … up to `maxSwitches`), stopping as soon as 10 results are collected:
 - **Pass 0**: Direct routes only (0 transfers) — ranked by total travel time.
 - **Pass 1**: Routes with 1 transfer — fills remaining slots, also ranked by time.
-- **Pass N**: Continues until 7 unique routes are found.
+- **Pass N**: Continues until 10 unique routes are found.
 
 This guarantees direct routes always come before 1-transfer routes in the output, regardless of cost.
 
@@ -46,19 +46,25 @@ During expansion, every potential connection is validated for:
 
 ## 🛠️ Project Architecture
 
+RailYatra utilizes a **Hybrid Multi-Tier & Micro-Core Architecture** to guarantee extreme pathfinding throughput while maintaining a smooth user experience.
+
 ```mermaid
 graph TD
     User((User)) -->|React + Vite| FE[Frontend]
-    FE -->|JSON API| BE[Express.js Backend]
-    BE -->|Child Process / SDTIN| CE[C++ Dijkstra Engine]
-    CE -->|Ingests| DATA[(JSON Train Data)]
+    FE -->|JSON API (REST)| BE[Express.js Backend]
+    BE -->|Persistent Child Process (stdin/stdout)| CE[C++ Dijkstra Engine]
+    CE -->|Pre-loads efficiently to RAM| DATA[(JSON Train Data)]
 ```
 
-### Tech Stack
+### Architectural Pillars
+- **Micro-Core Engine**: To circumvent Node.js CPU bottlenecks, the mathematically heavy Layered Multi-Pass Dijkstra algorithm is offloaded to a persistent, compiled C++17 process (`route_engine.exe`). It runs continuously in the background, listening synchronously over standard I/O streams to solve queries in single-digit milliseconds.
+- **Asynchronous API Gateway**: A lightweight Express.js server acts as an execution manager and HTTP bridge. It manages incoming API calls, generates query IDs, and talks synchronously to the C++ engine without blocking the Node event loop.
+- **"RailPath" Premium UI**: A bespoke frontend built on React 19 utilizing a sophisticated "Glassmorphism" aesthetic. The layout abandons standard tabular data on mobile for highly-tappable Journey Cards, enforcing an elegant dual-font hierarchy (`Plus Jakarta Sans` for headers, `Inter` for data density).
+
+### Tech Stack Breakdown
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
-- **Backend**: Node.js, Express.js.
-- **Engine**: C++17, `nlohmann/json` for high-speed serialization.
-- **Styling**: Custom "RailPath" design system with "Inter" & "Outfit" typography.
+- **Backend / Delivery Layer**: Node.js, Express.js.
+- **Navigation Engine**: Modern C++17, `nlohmann/json` macro-library for high-speed deterministic JSON serialization.
 
 ---
 
@@ -102,7 +108,7 @@ Calculates routes between two stations.
 | `sort_by` | `String` | `time`, `distance`, or `switches` | `switches` |
 | `max_wait` | `Int` | Max wait time at transfers (minutes) | `600` (10h) |
 | `max_switches`| `Int` | Max number of transfers allowed | `5` |
-| `top_k` | `Int` | Number of results to return | `7` |
+| `top_k` | `Int` | Number of results to return | `10` |
 
 ### `GET /api/stations`
 Autocomplete endpoint for station search. Returns top 10 matches.

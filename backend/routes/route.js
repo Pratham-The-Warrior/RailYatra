@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
             max_switches: parseInt(max_switches) || 5,
             max_wait: parseInt(max_wait) || 600,
             sort_by: sort_by || 'switches',
-            top_k: parseInt(top_k) || 7
+            top_k: parseInt(top_k) || 10
         });
         console.log("[API]: Received results from engine module");
 
