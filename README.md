@@ -49,11 +49,11 @@ During expansion, every potential connection is validated for:
 RailYatra utilizes a **Hybrid Multi-Tier & Micro-Core Architecture** to guarantee extreme pathfinding throughput while maintaining a smooth user experience.
 
 ```mermaid
-graph TD
-    User((User)) -->|React + Vite| FE[Frontend]
-    FE -->|JSON API (REST)| BE[Express.js Backend]
-    BE -->|Persistent Child Process (stdin/stdout)| CE[C++ Dijkstra Engine]
-    CE -->|Pre-loads efficiently to RAM| DATA[(JSON Train Data)]
+flowchart TD
+    User((User)) -->|React and Vite| FE[Frontend]
+    FE -->|JSON API REST| BE[ExpressJS Backend]
+    BE -->|Persistent Child Process| CE[Cpp Dijkstra Engine]
+    CE -->|Reads Data| DATA[(JSON Train Data)]
 ```
 
 ### Architectural Pillars
