@@ -4,14 +4,15 @@ import { Footer } from "@/components/Footer";
 import { Home } from "@/pages/Home";
 import { Schedules } from "@/pages/Schedules";
 import { CategoryRoutes } from "@/pages/CategoryRoutes";
+import { LiveStatus } from "@/pages/LiveStatus";
 
 function App() {
-    const [currentPage, setCurrentPage] = useState<'home' | 'schedules' | 'category-routes'>('home');
+    const [currentPage, setCurrentPage] = useState<'home' | 'schedules' | 'live-status' | 'category-routes'>('home');
     const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
     const [category, setCategory] = useState<{ id: string; name: string }>({ id: '', name: '' });
 
     const handleNavigate = (
-        page: 'home' | 'schedules' | 'category-routes',
+        page: 'home' | 'schedules' | 'live-status' | 'category-routes',
         trainNumber: string | null = null,
         categoryData?: { id: string; name: string }
     ) => {
@@ -26,6 +27,8 @@ function App() {
 
             {currentPage === 'schedules' ? (
                 <Schedules onNavigate={handleNavigate} initialTrainNumber={selectedTrain} />
+            ) : currentPage === 'live-status' ? (
+                <LiveStatus onNavigate={handleNavigate} initialTrainNumber={selectedTrain} />
             ) : currentPage === 'category-routes' ? (
                 <CategoryRoutes
                     category={category.id}

@@ -3,7 +3,7 @@ import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
-    onNavigate?: (page: 'home' | 'schedules' | 'category-routes') => void;
+    onNavigate?: (page: 'home' | 'schedules' | 'live-status' | 'category-routes') => void;
     currentPage?: string;
 }
 
@@ -13,9 +13,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
     const navItems = [
         { label: 'Home', page: 'home' as const },
         { label: 'Schedules', page: 'schedules' as const },
+        { label: 'Live Status', page: 'live-status' as const },
     ];
 
-    const handleNav = (page: 'home' | 'schedules') => {
+    const handleNav = (page: 'home' | 'schedules' | 'live-status') => {
         onNavigate?.(page);
         setMobileOpen(false);
     };

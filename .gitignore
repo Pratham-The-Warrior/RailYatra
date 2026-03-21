@@ -7,9 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Exceptions
-# (None)
-
 # Dependencies
 node_modules
 dist
@@ -40,3 +37,13 @@ sample.json
 engine/route_engine.exe
 train_pdf/
 *.txt
+status_*.json
+
+# Python & Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+backend/venv/
+backend/src/scripts/__pycache__/

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Route, SearchParams } from "@/types";
 import { SearchForm } from "@/components/SearchForm";
 import { RouteCard } from "@/components/RouteCard";
-import { Calendar, History, ArrowRight, Star } from "lucide-react";
+import { Calendar, History, ArrowRight, Star, Activity } from "lucide-react";
 
 const STORAGE_KEY = 'railyatra_recent_searches';
 
@@ -17,7 +17,7 @@ interface RecentSearch {
 
 interface HomeProps {
     onNavigate?: (
-        page: 'home' | 'schedules' | 'category-routes',
+        page: 'home' | 'schedules' | 'live-status' | 'category-routes',
         trainNumber?: string,
         category?: { id: string; name: string }
     ) => void;
@@ -157,6 +157,16 @@ export function Home({ onNavigate }: HomeProps) {
                         </div>
                         <h3 className="font-semibold text-slate-800 text-lg mb-1 group-hover:text-blue-600 transition-colors">Train Schedules</h3>
                         <p className="text-xs text-slate-400">View timetable and routes</p>
+                    </div>
+                    <div
+                        onClick={() => onNavigate?.('live-status')}
+                        className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start group"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <Activity size={20} />
+                        </div>
+                        <h3 className="font-semibold text-slate-800 text-lg mb-1 group-hover:text-emerald-600 transition-colors">Live Train Status</h3>
+                        <p className="text-xs text-slate-400">Track running status in real-time</p>
                     </div>
                 </div>
             </motion.section>
