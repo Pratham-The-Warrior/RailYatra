@@ -1,12 +1,15 @@
 const { spawn } = require('child_process');
-const config = require('./config');
+const config = require('../config');
 
 let engineProcess = null;
 let requestQueue = [];
 let engineOutputBuffer = '';
 
+/**
+ * spawns the C++ core engine process.
+ */
 function spawnEngine() {
-    console.log(`Spawning engine: ${config.enginePath}`);
+    console.log(`[Engine]: Spawning core engine: ${config.enginePath}`);
     engineProcess = spawn(config.enginePath, [config.dataDirPath]);
 
     engineProcess.stdout.on('data', (data) => {
@@ -15,15 +18,18 @@ function spawnEngine() {
     });
 
     engineProcess.stderr.on('data', (data) => {
-        console.log(`[Engine]: ${data.toString().trim()}`);
+        console.log(`[Engine Error]: ${data.toString().trim()}`);
     });
 
     engineProcess.on('close', (code) => {
-        console.log(`Engine exited with code ${code}. Restarting...`);
+        console.log(`[Engine]: Process exited with code ${code}. Restarting in 2s...`);
         setTimeout(spawnEngine, 2000);
     });
 }
 
+/**
+ * Parses JSON output from the C++ engine.
+ */
 function processEngineOutput(output) {
     if (requestQueue.length === 0) return;
 
@@ -47,11 +53,14 @@ function processEngineOutput(output) {
                 requestQueue.splice(reqIdx, 1);
             }
         } catch (e) {
-            console.error("Failed to parse engine output line:", e);
+            console.error("[Engine Parsing Error]:", e.message);
         }
     }
 }
 
+/**
+ * Sends a JSON request to the C++ engine over stdin.
+ */
 async function sendRequestToEngine(reqData) {
     if (!engineProcess) {
         throw new Error("Engine process is not running");

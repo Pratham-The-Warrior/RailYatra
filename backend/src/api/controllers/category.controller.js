@@ -1,21 +1,17 @@
-const express = require('express');
-const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 
-const VANDE_BHARAT_FILE = path.join(__dirname, '..', '..', 'master_train_data_vandebharat.json');
-
-router.get('/:category', (req, res) => {
+/**
+ * Controller for special train categories (e.g. Vande Bharat).
+ */
+exports.getCategoryTrains = (req, res) => {
     const { category } = req.params;
-    console.log(`[Special] Fetching routes for category: ${category}`);
 
-    // Map categories to specific files if they exist
-    // Default naming convention: master_train_data_${category}.json
-    const categoryFile = path.join(__dirname, '..', '..', `master_train_data_${category.toLowerCase()}.json`);
+    // Project root is backend/src/api/controllers -> ../../../
+    const categoryFile = path.join(__dirname, '..', '..', '..', '..', `master_train_data_${category.toLowerCase()}.json`);
 
     try {
         if (!fs.existsSync(categoryFile)) {
-            console.error(`[Special] Data file not found for: ${category} at ${categoryFile}`);
             return res.status(404).json({ error: `Route data for ${category} not found` });
         }
 
@@ -47,9 +43,7 @@ router.get('/:category', (req, res) => {
 
         res.json(trainList);
     } catch (error) {
-        console.error(`Error fetching ${category} trains:`, error);
+        console.error(`[Category Controller Error]:`, error);
         res.status(500).json({ error: 'Internal server error' });
     }
-});
-
-module.exports = router;
+};
