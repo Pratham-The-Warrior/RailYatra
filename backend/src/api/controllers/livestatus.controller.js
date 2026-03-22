@@ -39,9 +39,9 @@ const queryLiveStatus = (trainNumber) => {
 
         proc.on('close', (code) => {
             if (code !== 0) {
-                const reason = code === null ? 'Timeout/Killed' : `Exit Code ${code}`;
+                const reason = code === null ? 'Timeout/Killed (25s limit)' : `Process failed with code ${code}`;
                 console.error(`[Scraper Error]: ${reason}\nStderr: ${stderr}`);
-                return reject(new Error('Live status currently unavailable from official sources'));
+                return reject(new Error(`Service busy or blocked. ${reason}. ${stderr.slice(0, 100)}`));
             }
 
             try {

@@ -60,7 +60,7 @@ class RailRoutePro:
                 
                 target_url = f"{BASE_URL}GetCSRFToken?t={timestamp}"
                 if SCRAPER_API_KEY:
-                    final_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={quote(target_url)}"
+                    final_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={quote(target_url)}&country_code=in"
                 else:
                     final_url = target_url
 
@@ -115,7 +115,7 @@ class RailRoutePro:
         
         url = f"{BASE_URL}tr?opt=TrainRunning&subOpt=FindRunningInstance"
         if SCRAPER_API_KEY:
-            final_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={quote(url)}"
+            final_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={quote(url)}&country_code=in"
         else:
             final_url = url
 
