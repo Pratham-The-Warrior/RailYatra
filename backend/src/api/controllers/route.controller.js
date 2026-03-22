@@ -5,7 +5,7 @@ const engine = require('../../services/engine.service');
  */
 exports.searchRoute = async (req, res) => {
     const { from, to, date, max_switches, max_wait, sort_by, top_k } = req.body;
-    
+
     if (!from || !to || !date) {
         return res.status(400).json({ error: "Missing required fields: from, to, date" });
     }

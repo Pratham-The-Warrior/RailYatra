@@ -9,22 +9,33 @@
 #include <cctype>
 #include <functional>
 
+/* TraceNode stores a single visit to a station during the search.
+ * It's essentially a pointer in a tree that allows us to backtrack and reconstruct
+ * the full path (sequence of trains and stations) once we find the destination.
+ */
 struct TraceNode {
     int stationId;
-    int arrivalAbsMin;   // absolute minutes from day-0 00:00
-    int switches;
-    int trainId;
-    int fromStopIdx;
-    int toStopIdx;
-    int departAbsMin;    // when we departed the previous station
-    int parentIdx;       // index in traceNodes, -1 for root
+    int arrivalAbsMin;   // Absolute time from the start of the query day
+    int switches;        // How many times the passenger had to change trains to get here
+    int trainId;         // The train that brought us here
+    int fromStopIdx;     // Where we got ON this train
+    int toStopIdx;       // Where we got OFF this train (this station)
+    int departAbsMin;    // When we left the previous station on this train
+    int parentIdx;       // The index of the previous TraceNode (for path reconstruction)
 };
 
+/**
+ * PQState: The "active" status of our search in the priority queue.
+ * Dijkstra's algorithm uses this to decide which station to explore next.
+ * We prioritize lower "cost" (usually time or distance) and fewer "switches".
+ */
 struct PQState {
-    int traceIdx;
-    int cost;
-    int switches;
+    int traceIdx; // Points to the TraceNode that tells us HOW we got here
+    int cost;     // The accumulated cost (minutes or km) to reach this point
+    int switches; // How many train changes were made to get here
 
+    // This operator defines the "priority" in our Priority Queue.
+    // Lower cost always comes first.
     bool operator>(const PQState& o) const {
         if (cost != o.cost) return cost > o.cost;
         return switches > o.switches;
@@ -38,6 +49,13 @@ static std::string routeFingerprint(const RouteResult& r) {
     return fp;
 }
 
+/**
+ * reconstructRoute: Working backwards from the destination.
+ * 
+ * Once the search finds the target station, we have a 'traceIdx' pointing 
+ * to the final stop. We follow the 'parentIdx' links all the way back to 
+ * the start to build the final list of "Legs" (train segments) for the user.
+ */
 static RouteResult reconstructRoute(
     const std::vector<TraceNode>& trace,
     int traceIdx,
@@ -92,6 +110,8 @@ static RouteResult reconstructRoute(
     for (const auto& leg : rr.legs)
         rr.totalDistanceKm += leg.distanceKm;
 
+    // We also calculate "Buffer Time" — the total time spent waiting 
+    // at junctions between trains.
     if (!rr.legs.empty()) {
         int p2     = traceIdx;
         int lastArr = trace[p2].arrivalAbsMin;
@@ -111,6 +131,14 @@ static RouteResult reconstructRoute(
     return rr;
 }
 
+/**
+ * runDijkstraPass: The core search engine.
+ * 
+ * Unlike a standard shortest-path search, we use a "multi-pass" approach.
+ * We first look for 0-switch (direct) routes, then 1-switch, and so on.
+ * This ensures we prioritize simpler, more convenient journeys for the user
+ * even if they take slightly longer.
+ */
 static std::vector<RouteResult> runDijkstraPass(
     const Graph& graph,
     int fromId,
@@ -140,31 +168,36 @@ static std::vector<RouteResult> runDijkstraPass(
     for (int tId : startTrains) {
         const TrainInfo& t = graph.getTrain(tId);
 
+        // A train might stop at our starting station multiple times (rare) or 
+        // have a complex schedule. we check every stop to see if it's our "fromId".
         for (int si = 0; si < (int)t.schedule.size(); ++si) {
             const auto& stop = t.schedule[si];
             if (stop.stationId != fromId || stop.departureMin < 0)
                 continue;
 
-            int daysSinceStart  = stop.dayOfJourney - 1;
-            int trainStartWkDay = ((queryDayOfWeek - daysSinceStart) % 7 + 7) % 7;
-            if (!t.operatingDays[trainStartWkDay])
+            // Check if this train actually runs on the query day.
+            // We calculate the 'start day' of the train based on when it reaches our station.
+            int daysSinceStart  = stop.dayOfJourney - 1; // Calculate days offset from first station
+            int trainStartWkDay = ((queryDayOfWeek - daysSinceStart) % 7 + 7) % 7; // Adjust for wraps
+            if (!t.operatingDays[trainStartWkDay]) // Skip if train doesn't run on this weekday
                 continue;
 
-            int depAbs = stop.departureMin;
+            int depAbs = stop.departureMin; // Store absolute departure time for seeding
 
             for (int sj = si + 1; sj < (int)t.schedule.size(); ++sj) {
                 const auto& dest = t.schedule[sj];
                 if (dest.arrivalMin < 0) continue;
 
+                // Calculate total travel time considering day boundaries
                 int arrAbs = (dest.dayOfJourney - stop.dayOfJourney) * 1440
                            + dest.arrivalMin;
-                if (arrAbs <= depAbs) {
+                if (arrAbs <= depAbs) { // Handle overnight wrap
                     arrAbs = depAbs + (dest.arrivalMin - stop.departureMin);
-                    if (arrAbs <= depAbs) arrAbs += 1440;
+                    if (arrAbs <= depAbs) arrAbs += 1440; // Force positive duration
                 }
 
-                int dist = dest.distanceKm - stop.distanceKm;
-                if (dist < 0) dist = 0;
+                int dist = dest.distanceKm - stop.distanceKm; // Net distance for this segment
+                if (dist < 0) dist = 0; // Guard against negative distance data
 
                 int cost;
                 switch (sortMode) {
@@ -182,18 +215,18 @@ static std::vector<RouteResult> runDijkstraPass(
                 if (trace.size() >= MAX_TRACE) continue;
 
                 TraceNode tn;
-                tn.stationId     = dest.stationId;
-                tn.arrivalAbsMin = arrAbs;
-                tn.switches      = 0;
-                tn.trainId       = t.id;
-                tn.fromStopIdx   = si;
-                tn.toStopIdx     = sj;
-                tn.departAbsMin  = depAbs;
-                tn.parentIdx     = -1;
+                tn.stationId     = dest.stationId;   // Where the train stops
+                tn.arrivalAbsMin = arrAbs;           // When it arrives there
+                tn.switches      = 0;                // Direct train (no switches yet)
+                tn.trainId       = t.id;             // Reference to the train object
+                tn.fromStopIdx   = si;               // Boarding index
+                tn.toStopIdx     = sj;               // Alighting index
+                tn.departAbsMin  = depAbs;           // Boarding time
+                tn.parentIdx     = -1;               // Root node (no parent)
 
-                int idx = (int)trace.size();
-                trace.push_back(tn);
-                pq.push({idx, cost, 0});
+                int idx = (int)trace.size();         // Get unique index for this trace entry
+                trace.push_back(tn);                 // Save to persistent trace vector
+                pq.push({idx, cost, 0});             // Push to search frontier
             }
         }
     }
@@ -201,71 +234,76 @@ static std::vector<RouteResult> runDijkstraPass(
     std::vector<RouteResult> results;
 
     while (!pq.empty() && (int)results.size() < neededCount) {
-        PQState top = pq.top();
-        pq.pop();
+        PQState top = pq.top(); // Get the state with the lowest cost
+        pq.pop();               // Remove it from the priority queue
 
-        const TraceNode& curr = trace[top.traceIdx];
+        const TraceNode& curr = trace[top.traceIdx]; // Access the detailed trace entry
 
-        if (curr.stationId == toId) {
-            RouteResult rr = reconstructRoute(trace, top.traceIdx, graph);
-            std::string fp = routeFingerprint(rr);
-            if (!seenFingerprints.count(fp)) {
-                seenFingerprints.insert(fp);
-                results.push_back(std::move(rr));
+        if (curr.stationId == toId) { // Check if we've reached the destination
+            RouteResult rr = reconstructRoute(trace, top.traceIdx, graph); // Build the path
+            std::string fp = routeFingerprint(rr); // Generate unique ID for this route
+            if (!seenFingerprints.count(fp)) {      // Deduplicate similar routes
+                seenFingerprints.insert(fp);         // Mark this fingerprint as seen
+                results.push_back(std::move(rr));    // Add to our results collection
             }
-            continue;
+            continue; // Keep searching for alternative routes
         }
 
-        if (curr.switches >= passMaxSwitches)
+        if (curr.switches >= passMaxSwitches) // Don't exceed the switch limit for this pass
             continue;
 
+        // Search for all trains departing from the current station
         const auto& connectingTrains = graph.trainsAtStation(curr.stationId);
 
         for (int tId : connectingTrains) {
-            if (tId == curr.trainId) continue; // already handled via skip-stop seeds
+            if (tId == curr.trainId) continue; // Skip the train we just arrived on
 
-            const TrainInfo& nextTrain = graph.getTrain(tId);
+            const TrainInfo& nextTrain = graph.getTrain(tId); // Get metadata for the next train
 
             for (int si = 0; si < (int)nextTrain.schedule.size(); ++si) {
                 const auto& stop = nextTrain.schedule[si];
                 if (stop.stationId != curr.stationId || stop.departureMin < 0)
-                    continue;
+                    continue; // Find where this train stops at our current junction                // Handle 'Day Wrap': Many Indian trains run across multiple days.
+                // If we arrive at a junction late at night, the connecting train 
+                // might depart early the next morning or even the day after.
+                int arrivalDay = curr.arrivalAbsMin / 1440; // Current day of the journey
 
-                // Try departures across the next 3 days to handle day wrap
-                int arrivalDay = curr.arrivalAbsMin / 1440;
+                for (int d = 0; d <= 2; ++d) { // Check today, tomorrow, and day-after connections
+                    int checkDay       = arrivalDay + d; // The specific day we are checking
+                    int potentialDepAbs = checkDay * 1440 + stop.departureMin; // Absolute departure time
 
-                for (int d = 0; d <= 2; ++d) {
-                    int checkDay       = arrivalDay + d;
-                    int potentialDepAbs = checkDay * 1440 + stop.departureMin;
+                    int waitTime = potentialDepAbs - curr.arrivalAbsMin; // How long we wait at the station
+                    
+                    // We enforce a 30-minute minimum buffer for connections.
+                    // This accounts for walking between platforms or minor arrival delays.
+                    if (waitTime < 30)         continue; // Buffer too short
+                    if (waitTime > maxWaitMin) break;    // Wait time exceeds user preference
 
-                    int waitTime = potentialDepAbs - curr.arrivalAbsMin;
-                    if (waitTime < 30)         continue; // minimum 30-min connection
-                    if (waitTime > maxWaitMin) break;    // too long — skip further days
-
-                    int daysSinceTrainStart  = stop.dayOfJourney - 1;
-                    int absoluteTrainStartDay = checkDay - daysSinceTrainStart;
-                    int trainStartWkDay = ((queryDayOfWeek + absoluteTrainStartDay) % 7 + 7) % 7;
-                    if (!nextTrain.operatingDays[trainStartWkDay])
+                    int daysSinceTrainStart  = stop.dayOfJourney - 1; // Days since train left source
+                    int absoluteTrainStartDay = checkDay - daysSinceTrainStart; // Absolute start day
+                    int trainStartWkDay = ((queryDayOfWeek + absoluteTrainStartDay) % 7 + 7) % 7; // Target weekday
+                    if (!nextTrain.operatingDays[trainStartWkDay]) // check if train runs on this day
                         continue;
 
                     for (int sj = si + 1; sj < (int)nextTrain.schedule.size(); ++sj) {
                         const auto& dest = nextTrain.schedule[sj];
                         if (dest.arrivalMin < 0) continue;
 
-                        int depAbs = potentialDepAbs;
+                        int depAbs = potentialDepAbs; // The departure time we've committed to
+                        // Calculate arrival time at next station
                         int arrAbs = (dest.dayOfJourney - stop.dayOfJourney) * 1440
                                    + dest.arrivalMin
                                    + checkDay * 1440;
-                        if (arrAbs <= depAbs) {
+                        if (arrAbs <= depAbs) { // Consistency check for arrival/departure
                             arrAbs = depAbs + ((dest.dayOfJourney - stop.dayOfJourney) * 1440
                                      + dest.arrivalMin - stop.departureMin);
-                            if (arrAbs <= depAbs) arrAbs += 1440;
+                            if (arrAbs <= depAbs) arrAbs += 1440; // Correction for travel spanning days
                         }
 
-                        int newSwitches = curr.switches + 1;
+                        int newSwitches = curr.switches + 1; // Increment switch count for this leg
 
-                        int dist = dest.distanceKm - stop.distanceKm;
-                        if (dist < 0) dist = 0;
+                        int dist = dest.distanceKm - stop.distanceKm; // Calculate segment distance
+                        if (dist < 0) dist = 0; // Data cleanup
 
                         int cost;
                         switch (sortMode) {
@@ -273,29 +311,29 @@ static std::vector<RouteResult> runDijkstraPass(
                             default:                 cost = arrAbs; break; // TIME
                         }
 
-                        bool isDest = (dest.stationId == toId);
+                        bool isDest = (dest.stationId == toId); // Check if this leg reaches final target
 
-                        if (!isDest) {
-                            if (newSwitches > passMaxSwitches) continue;
-                            if (cost >= bestCost[dest.stationId][newSwitches]) continue;
-                            bestCost[dest.stationId][newSwitches] = cost;
+                        if (!isDest) { // Pruning logic for intermediate stations
+                            if (newSwitches > passMaxSwitches) continue; // Skip if too many switches
+                            if (cost >= bestCost[dest.stationId][newSwitches]) continue; // Skip if not a better path
+                            bestCost[dest.stationId][newSwitches] = cost; // Update best known cost
                         }
 
-                        if (trace.size() >= MAX_TRACE) continue;
+                        if (trace.size() >= MAX_TRACE) continue; // Guard against memory overflow
 
                         TraceNode tn;
-                        tn.stationId     = dest.stationId;
-                        tn.arrivalAbsMin = arrAbs;
-                        tn.switches      = newSwitches;
-                        tn.trainId       = nextTrain.id;
-                        tn.fromStopIdx   = si;
-                        tn.toStopIdx     = sj;
-                        tn.departAbsMin  = depAbs;
-                        tn.parentIdx     = top.traceIdx;
+                        tn.stationId     = dest.stationId;    // Destination station ID
+                        tn.arrivalAbsMin = arrAbs;            // Absolute arrival time
+                        tn.switches      = newSwitches;       // Updated total switches
+                        tn.trainId       = nextTrain.id;      // Current train ID
+                        tn.fromStopIdx   = si;                // Departure stop index
+                        tn.toStopIdx     = sj;                // Arrival stop index
+                        tn.departAbsMin  = depAbs;            // Absolute departure time
+                        tn.parentIdx     = top.traceIdx;      // Pointer to parent trace node
 
-                        int idx = (int)trace.size();
-                        trace.push_back(tn);
-                        pq.push({idx, cost, newSwitches});
+                        int idx = (int)trace.size();          // Unique index for the new node
+                        trace.push_back(tn);                  // Record in trace
+                        pq.push({idx, cost, newSwitches});    // Enqueue for further exploration
                     }
                 }
             }
@@ -312,6 +350,15 @@ static std::vector<RouteResult> runDijkstraPass(
     return results;
 }
 
+/**
+ * findRoutes: The top-level entry point for a route search.
+ * 
+ * This method coordinates the "Multi-Pass" strategy. It starts by looking 
+ * for direct trains (0 switches). If it finds enough, it stops. Otherwise, 
+ * it increments the switch limit and runs a deeper search. This makes 
+ * results feel "smarter" because we don't suggest 3-train connections 
+ * if a direct train exists.
+ */
 std::vector<RouteResult> DijkstraSolver::findRoutes(
     const std::string& fromCode,
     const std::string& toCode,
@@ -355,6 +402,14 @@ std::vector<RouteResult> DijkstraSolver::findRoutes(
 }
 
 
+/**
+ * toJson: Converting our internal RouteResult objects into 
+ * standard JSON for the Node.js backend.
+ * 
+ * We iterate through every found route and every segment (leg) within 
+ * those routes, mapping them to keys like "train_number", "departure_time", 
+ * etc. that the frontend expects.
+ */
 json DijkstraSolver::toJson(const std::vector<RouteResult>& results) {
     json arr = json::array();
 

@@ -4,6 +4,7 @@ import time
 import sys
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+import re
 
 # --- Constants & Configuration ---
 BASE_URL = "https://enquiry.indianrail.gov.in/mntes/"
@@ -29,7 +30,7 @@ class RailRoutePro:
         """Removes UI artifacts and deep cleans text for clean data output."""
         if not text:
             return "--"
-        junk = ["Coach Position", "KMs", "KM", "*", "JN.", "JN", "Station", "Link", "Map"]
+        junk = ["Coach Position", "*", "JN.", "JN", "Station", "Link", "Map"]
         cleaned = text.replace('\xa0', ' ')
         for word in junk:
             cleaned = cleaned.replace(word, "")
@@ -47,7 +48,7 @@ class RailRoutePro:
         except Exception:
             return None, None
 
-    def get_status(self, train_no, day_offset=0):
+    def get_status(self, train_no, day_offset=0, save_raw=False):
         """
         Fetches the live status for a specific train and date.
         Automatically falls back to 'Yesterday' if today's journey hasn't started.
@@ -78,18 +79,27 @@ class RailRoutePro:
         except Exception as e:
             return {"error": f"Connection failed: {str(e)}"}
         
+        if save_raw:
+            with open(f"html_{train_no}.html", "w", encoding="utf-8") as f:
+                f.write(response.text)
+            
         result = self._parse_html(response.text, train_no, target_date)
 
         # Automatic multiday fallback (Recursive call)
         status = result.get("meta", {}).get("status", "").lower()
-        if day_offset == 0 and (not result.get("itinerary") or "yet to start" in status):
-            return self.get_status(train_no, day_offset=-1)
+        if (day_offset >= -2) and (not result.get("itinerary") or "yet to start" in status):
+            return self.get_status(train_no, day_offset=day_offset-1, save_raw=save_raw)
 
         return result
 
     def _parse_html(self, html, train_no, target_date):
         """Identifies the correct date container and parses station stop cards."""
         soup = BeautifulSoup(html, 'html.parser')
+        
+        # Check for invalid train
+        for h in soup.find_all('h4'):
+            if 'invalid train no' in h.get_text().lower():
+                return {"error": "Invalid Train Number or the train does not exist."}
         
         # Scope search to exactly the box for this date
         container_id = f"train{target_date.lower()}"
@@ -108,7 +118,23 @@ class RailRoutePro:
             }
 
         header = container.find_parent().find('h6', class_='text-primary') or soup.find('h6', class_='text-primary')
-        current_loc = self._clean(header.get_text()) if header else "Unknown"
+        header_text = header.get_text() if header else ""
+        
+        if not header_text:
+            # Fallback for destination reached or missing header
+            b_tags = container.find_all('b')
+            for b_tag in b_tags:
+                txt = b_tag.get_text(strip=True)
+                if txt.startswith("Arrived at") or txt.startswith("Departed from"):
+                    header_text = txt
+                    break
+            if not header_text:
+                for b_tag in b_tags:
+                    if "Reached Destination" in b_tag.get_text(strip=True):
+                        header_text = "Reached Destination"
+                        break
+
+        current_loc = self._clean(header_text) if header_text else "Unknown"
 
         itinerary = []
         cards = [c for c in container.find_all('div', class_='w3-card-2') 
@@ -127,12 +153,19 @@ class RailRoutePro:
             
             station_col, departure_col = info_wrapper[0], info_wrapper[1]
 
-            def extract_time(node):
-                """Helper to extract HH:MM from bold tags."""
-                b_tags = [b.get_text(strip=True).replace('*', '') for b in node.find_all('b')]
-                return next((t for t in b_tags if ":" in t), "--")
+            def extract_times(node):
+                """Helper to extract HH:MM from bold tags, returning all found."""
+                return [b.get_text(strip=True).replace('*', '') 
+                        for b in node.find_all('b') if ":" in b.get_text()]
 
-            name = self._clean(station_col.find('b').get_text())
+            arr_times = extract_times(arrival_col) if idx != 0 else ["SOURCE"]
+            dep_times = extract_times(departure_col) if idx != len(cards)-1 else ["DEST"]
+
+            full_name = self._clean(station_col.find('b').get_text())
+            code_match = re.search(r'\(([A-Z]{2,})\)', full_name)
+            station_code = code_match.group(1) if code_match else ""
+            station_name = re.sub(r'\s*\([A-Z]{2,}\)', '', full_name).strip()
+
             status_span = card.find('span', class_=lambda x: x and ('w3-green' in x or 'w3-red' in x))
             
             # Map UI colors to delay flags
@@ -140,18 +173,32 @@ class RailRoutePro:
             if status_span:
                 is_delayed = any('w3-red' in c for c in status_span.get('class', []))
 
+            # Extract distance (KM)
+            distance_km = 0
+            km_b_tag = card.find('b', string=re.compile(r'^\d+$'))
+            if km_b_tag and 'KMs' in km_b_tag.parent.get_text():
+                distance_km = int(km_b_tag.get_text())
+            elif not km_b_tag:
+                # Fallback: search in all text
+                km_text = card.get_text()
+                km_match = re.search(r'(\d+)\s+KMs', km_text)
+                if km_match:
+                    distance_km = int(km_match.group(1))
+
             itinerary.append({
-                "station": name,
+                "station": station_name,
+                "station_code": station_code,
+                "distance_km": distance_km,
                 "platform": self._clean(station_col.find('span', class_='w3-orange').get_text()) if station_col.find('span', class_='w3-orange') else "N/A",
                 "status": self._clean(status_span.get_text()) if status_span else "On Time",
                 "is_delayed": is_delayed,
                 "is_source": idx == 0,
                 "is_destination": idx == len(cards)-1,
                 "timings": {
-                    "sch_arr": extract_time(arrival_col) if idx != 0 else "SOURCE",
-                    "act_arr": extract_time(arrival_col) if idx != 0 else "SOURCE",
-                    "sch_dep": extract_time(departure_col) if idx != len(cards)-1 else "DEST",
-                    "act_dep": extract_time(departure_col) if idx != len(cards)-1 else "DEST"
+                    "sch_arr": arr_times[0],
+                    "act_arr": arr_times[1] if len(arr_times) > 1 else arr_times[0],
+                    "sch_dep": dep_times[0],
+                    "act_dep": dep_times[1] if len(dep_times) > 1 else dep_times[0]
                 }
             })
 
@@ -172,8 +219,19 @@ if __name__ == "__main__":
     # Mode 1: Programmatic CLI (Used by Node.js backend)
     if len(sys.argv) > 1:
         train_id = sys.argv[1].strip()
-        report = engine.get_status(train_id)
+        save_mode = "--save" in sys.argv
+        
+        # Filter out the flag from train_id if it was passed first
+        if train_id == "--save" and len(sys.argv) > 2:
+            train_id = sys.argv[2].strip()
+
+        report = engine.get_status(train_id, save_raw=save_mode)
+        
         # Ensure UTF-8 output for Windows pipes
+        if save_mode:
+            with open(f"final_{train_id}.json", "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=4)
+                
         sys.stdout.reconfigure(encoding='utf-8')
         print(json.dumps(report, ensure_ascii=False))
         sys.exit(0)

@@ -38,6 +38,9 @@ engine/route_engine.exe
 train_pdf/
 *.txt
 status_*.json
+html_*.html
+final_*.json
+out*.json
 
 # Python & Environments
 __pycache__/

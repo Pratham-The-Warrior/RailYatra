@@ -1,6 +1,8 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const config = require('../../config');
+const { transformLiveStatus } = require('../../services/transformer.service');
+
 
 /**
  * Constants & Configuration
@@ -8,14 +10,14 @@ const config = require('../../config');
 const SCRAPER_PATH = path.join(__dirname, '..', '..', 'scripts', 'scraper.py');
 const PYTHON_CMD = process.platform === 'win32' ? 'python' : 'python3';
 const REQUEST_TIMEOUT_MS = 30000; // Total capped response time for user
-const CACHE_TTL_MS = 120000;      // Cache duration: 2 minutes
-const MAX_CONCURRENT_SCRAPES = 5;  // Limits resource usage
+const MAX_CONCURRENT_SCRAPES = 1;  // STRICT LIMIT: 1 active scraper at a time globally
+const CACHE_TTL_MS = 60000;        // 60-second cache to prevent redundant queueing
 
 /**
  * State Management (In-Memory)
  */
-const cache = new Map();             // trainNumber -> { data, timestamp }
 const inFlightRequests = new Map();  // trainNumber -> Promise (Request Coalescing)
+const responseCache = new Map();     // trainNumber -> { data, timestamp }
 let activeScrapersCount = 0;         // Tracks currently running Python processes
 const scraperQueue = [];             // FIFO queue for pending scrapes
 
@@ -69,8 +71,6 @@ const enqueueScrape = (trainNumber) => {
             activeScrapersCount++;
             try {
                 const result = await queryLiveStatus(trainNumber);
-                // Update Cache on success
-                cache.set(trainNumber, { data: result, timestamp: Date.now() });
                 resolve(result);
             } catch (err) {
                 reject(err);
@@ -105,26 +105,30 @@ exports.getTrainStatus = async (req, res) => {
     }
     const normalizedNumber = trainNumber.padStart(5, '0');
 
-    // 2. Check Cache
-    const cached = cache.get(normalizedNumber);
-    if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-        console.log(`[LiveStatus]: Serving CACHED result for ${normalizedNumber}`);
-        return res.json(cached.data);
+    // 2. Check 60-Second TTL Cache FIRST
+    if (responseCache.has(normalizedNumber)) {
+        const cached = responseCache.get(normalizedNumber);
+        if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
+            const transformedData = transformLiveStatus(cached.data);
+            return res.json(transformedData);
+        } else {
+            responseCache.delete(normalizedNumber); // Expired
+        }
     }
 
     // 3. Handle Request Coalescing (Merging duplicate requests)
     if (inFlightRequests.has(normalizedNumber)) {
-        console.log(`[LiveStatus]: COALESCING request for ${normalizedNumber}`);
         try {
             const result = await inFlightRequests.get(normalizedNumber);
-            return res.json(result);
+            const transformedData = transformLiveStatus(result);
+            return res.json(transformedData);
         } catch (err) {
             return res.status(502).json({ error: err.message });
         }
     }
 
     // 4. Queue and Process with Capped Timeout
-    console.log(`[LiveStatus]: ENQUEUEING search for ${normalizedNumber}`);
+
     const scrapePromise = enqueueScrape(normalizedNumber);
     inFlightRequests.set(normalizedNumber, scrapePromise);
 
@@ -135,11 +139,18 @@ exports.getTrainStatus = async (req, res) => {
 
     try {
         const result = await Promise.race([scrapePromise, timeoutPromise]);
-        
+
         if (result.error) {
             return res.status(502).json({ error: result.error });
         }
-        res.json(result);
+
+        // Save successful clean result to cache
+        responseCache.set(normalizedNumber, { data: result, timestamp: Date.now() });
+
+        // Transform for frontend
+        const transformedData = transformLiveStatus(result);
+        res.json(transformedData);
+
     } catch (err) {
         if (err.message === 'RETRY_LATER') {
             console.warn(`[LiveStatus]: Timeout reached for ${normalizedNumber}. Client must retry.`);

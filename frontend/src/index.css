@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -17,7 +17,7 @@
 
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
   }
 
   h1,
@@ -26,7 +26,7 @@
   h4,
   h5,
   h6 {
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'Outfit', sans-serif;
   }
 }
 
@@ -89,4 +89,27 @@ textarea {
 
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
+}
+
+/* Vertical scrollbar for timeline */
+.scrollbar-timeline {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.scrollbar-timeline::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scrollbar-timeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-timeline::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.scrollbar-timeline::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

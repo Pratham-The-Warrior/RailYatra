@@ -1,4 +1,4 @@
-export interface RouteStep {
+interface RouteStep {
     from_name: string;
     from_code: string;
     to_name: string;

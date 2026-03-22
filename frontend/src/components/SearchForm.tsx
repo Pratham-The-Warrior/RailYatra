@@ -74,7 +74,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
                 </div>
 
                 {/* Swap Button */}
-                <div className="relative w-full md:w-auto flex justify-center items-center h-0 md:h-auto z-20 md:-mx-3 md:mb-2">
+                <div className="relative w-full md:w-auto flex justify-center items-center h-2 md:h-auto z-20 md:-mx-3 md:mb-2">
                     <button
                         type="button"
                         onClick={handleSwap}

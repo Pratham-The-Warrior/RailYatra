@@ -51,8 +51,9 @@ export default {
                 "slate-custom": "#1e293b",
             },
             fontFamily: {
-                "sans": ["Inter", "system-ui", "sans-serif"],
-                "display": ["Plus Jakarta Sans", "Inter", "sans-serif"]
+                "sans": ["'Plus Jakarta Sans'", "Inter", "system-ui", "sans-serif"],
+                "display": ["Outfit", "sans-serif"],
+                "outfit": ["Outfit", "sans-serif"]
             },
             borderRadius: {
                 "DEFAULT": "0.25rem",

@@ -16,14 +16,25 @@ using json = nlohmann::json;
 
 // ── Station helpers ──────────────────────────────────────────────
 
+/**
+ * @brief Gets the ID of a station, creating it if it doesn't exist.
+ * @param code The unique code for the station.
+ * @param name The full name of the station. If empty, the code is used as name.
+ * @return The integer ID of the station.
+ */
 int Graph::getOrCreateStation(const std::string& code, const std::string& name) {
+    // Check if the station already exists.
     auto it = codeToId.find(code);
-    if (it != codeToId.end()) return it->second;
+    if (it != codeToId.end()) return it->second; // If found, return its existing ID.
 
-    int id = (int)stations.size();
+    // If not found, create a new station.
+    int id = (int)stations.size(); // Assign a new unique ID.
+    // Store the station's metadata. If name is empty, use code as name.
     stations.push_back({id, code, name.empty() ? code : name});
-    codeToId[code] = id;
-    return id;
+    codeToId[code] = id; // Map the station code to its new ID.
+    adj.push_back({}); // Initialize an empty adjacency list for this new station.
+    stationToTrains.push_back({}); // Initialize an empty list for trains stopping at this station.
+    return id; // Return the ID of the newly created station.
 }
 
 int Graph::getStationId(const std::string& code) const {
@@ -68,127 +79,161 @@ static bool loadTrainFile(const std::string& path, json& out) {
 
 // ── Build the full graph ─────────────────────────────────────────
 
+/**
+ * processTrainData: The heart of the graph builder.
+ * It takes a single train's JSON data (route, schedule, operating days) 
+ * and maps it into our internal graph structure.
+ */
 void Graph::processTrainData(json& jData) {
+    // Create a new TrainInfo object and populate its basic details.
     TrainInfo t;
-    t.id     = (int)trains.size();
-    t.number = jData.value("train_number", "UNKNOWN");
-    t.name   = jData.value("train_name", "");
-    t.type   = jData.value("type", "Express");
+    t.id     = (int)trains.size(); // Assign a unique ID to the train.
+    t.number = jData.value("train_number", "UNKNOWN"); // Get train number, default to UNKNOWN.
+    t.name   = jData.value("train_name", ""); // Get train name.
+    t.type   = jData.value("type", "Express"); // Get train type, default to Express.
 
-    // Classes
+    // Parse available classes for the train.
     if (jData.contains("classes_available")) {
         for (auto& c : jData["classes_available"])
             t.classes.insert(c.get<std::string>());
-    } else if (jData.contains("classes")) {
+    } else if (jData.contains("classes")) { // Handle alternative key for classes.
         for (auto& c : jData["classes"])
             t.classes.insert(c.get<std::string>());
     }
 
-    // Operating days
+    // Initialize operating days to false for all days.
     for (int i = 0; i < 7; ++i) t.operatingDays[i] = false;
+    // Parse operating days from JSON.
     if (jData.contains("operating_days")) {
         auto& ops = jData["operating_days"];
         for (auto it = ops.begin(); it != ops.end(); ++it) {
-            int dayIdx = TimeUtils::getDayOfWeek(it.key());
+            int dayIdx = TimeUtils::getDayOfWeek(it.key()); // Convert day name to index (0-6).
             if (dayIdx >= 0 && dayIdx < 7)
-                t.operatingDays[dayIdx] = it.value().get<bool>();
+                t.operatingDays[dayIdx] = it.value().get<bool>(); // Set operating status for the day.
         }
     }
 
-    // Schedule
+    // Check if schedule data exists; if not, this train cannot be processed.
     if (!jData.contains("schedule")) return;
 
+    // Iterate through each stop in the train's schedule.
     for (auto& stop : jData["schedule"]) {
-        std::string sCode = stop.value("station_code", "");
-        std::string sName = stop.value("station_name", "");
-        if (sCode.empty()) continue;
+        std::string sCode = stop.value("station_code", ""); // Get station code.
+        std::string sName = stop.value("station_name", ""); // Get station name.
+        if (sCode.empty()) continue; // Skip if station code is missing.
 
+        // Create a ScheduleStop object.
         ScheduleStop ss;
+        // Get or create the station and assign its ID.
         ss.stationId = getOrCreateStation(sCode, sName);
 
-        // Parse arrival
+        // Parse arrival time.
         if (stop.contains("arrival_time") && !stop["arrival_time"].is_null())
             ss.arrivalMin = TimeUtils::parseTime(stop["arrival_time"].get<std::string>());
         else
-            ss.arrivalMin = -1;
+            ss.arrivalMin = -1; // Indicate no arrival time.
 
-        // Parse departure
+        // Parse departure time.
         if (stop.contains("departure_time") && !stop["departure_time"].is_null())
             ss.departureMin = TimeUtils::parseTime(stop["departure_time"].get<std::string>());
         else
-            ss.departureMin = -1;
+            ss.departureMin = -1; // Indicate no departure time.
 
-        ss.dayOfJourney = stop.value("day_of_journey", 1);
-        ss.distanceKm   = (int)stop.value("distance_km", 0.0);
+        ss.dayOfJourney = stop.value("day_of_journey", 1); // Get day of journey, default to 1.
+        ss.distanceKm   = (int)stop.value("distance_km", 0.0); // Get distance, default to 0.
 
-        t.schedule.push_back(ss);
+        t.schedule.push_back(ss); // Add the stop to the train's schedule.
     }
 
+    // If the schedule is empty after parsing, this train is invalid.
     if (t.schedule.empty()) return;
 
     // ── Build edges ────────────
-    int maxSid = 0;
-    for (auto& ss : t.schedule)
-        maxSid = std::max(maxSid, ss.stationId);
+    // We create "edges" for every possible leg of the journey. 
+    // If a train goes A -> B -> C, we create edges for:
+    // A -> B, B -> C (direct) AND A -> C (skip-stop).
+    // This pre-computation makes Dijkstra much faster because 
+    // the 'cost' of staying on the same train is baked into a single edge.
 
-    if ((int)adj.size() <= maxSid)
-        adj.resize(maxSid + 1);
-    if ((int)stationToTrains.size() <= maxSid)
-        stationToTrains.resize(maxSid + 1);
-
+    // First loop: Create direct edges between consecutive stops.
     for (int i = 0; i < (int)t.schedule.size() - 1; ++i) {
-        const auto& from = t.schedule[i];
-        const auto& to   = t.schedule[i + 1];
+        const auto& from = t.schedule[i];     // The starting stop of the leg.
+        const auto& to   = t.schedule[i + 1]; // The next stop in the schedule.
 
+        // Ensure both stops have valid departure and arrival times.
         if (from.departureMin < 0 || to.arrivalMin < 0) continue;
 
+        // Calculate absolute departure and arrival times in minutes from journey start.
         int depAbs = (from.dayOfJourney - 1) * 1440 + from.departureMin;
         int arrAbs = (to.dayOfJourney   - 1) * 1440 + to.arrivalMin;
+        
+        // Basic sanity check for duration.
         int travelTime = arrAbs - depAbs;
-        if (travelTime < 0) travelTime += 1440;
+        if (travelTime < 0) travelTime += 1440; // Handles simple overnight legs by adding a day.
 
+        // Calculate distance for this leg.
         int dist = to.distanceKm - from.distanceKm;
-        if (dist < 0) dist = 0;
+        if (dist < 0) dist = 0; // Distance should not be negative.
 
+        // Create a new Edge object.
         Edge e;
-        e.toStation     = to.stationId;
-        e.distanceKm    = dist;
-        e.travelTimeMin = travelTime;
-        e.trainId       = t.id;
-        e.fromStopIdx   = i;
-        e.toStopIdx     = i + 1;
+        e.toStation     = to.stationId;     // Destination station ID.
+        e.distanceKm    = dist;             // Distance of this leg.
+        e.travelTimeMin = travelTime;       // Travel time for this leg.
+        e.trainId       = t.id;             // ID of the train.
+        e.fromStopIdx   = i;                // Index of the departure stop in the train's schedule.
+        e.toStopIdx     = i + 1;            // Index of the arrival stop in the train's schedule.
 
+        // Add the edge to the adjacency list of the departure station.
         adj[from.stationId].push_back(e);
     }
 
+    // Second loop: Generate skip-stop edges for all subsequent stations in the schedule.
+    // This pre-calculates the travel cost between any two stops on the same train,
+    // which significantly speeds up the Dijkstra search by reducing node expansions.
     for (int i = 0; i < (int)t.schedule.size(); ++i) {
-        const auto& from = t.schedule[i];
-        if (from.departureMin < 0) continue;
+        const auto& stop = t.schedule[i]; // The boarding station for this potential journey.
+        if (stop.departureMin < 0) continue; // Skip if no departure time from this stop.
 
-        for (int j = i + 2; j < (int)t.schedule.size(); ++j) {
-            const auto& to = t.schedule[j];
-            if (to.arrivalMin < 0) continue;
+        for (int j = i + 1; j < (int)t.schedule.size(); ++j) { // Iterate through all subsequent stops.
+            const auto& dest = t.schedule[j]; // The future destination station.
+            if (dest.arrivalMin < 0) continue; // Skip if no arrival time at the destination.
 
-            int depAbs = (from.dayOfJourney - 1) * 1440 + from.departureMin;
-            int arrAbs = (to.dayOfJourney   - 1) * 1440 + to.arrivalMin;
+            // Calculate absolute departure time from the boarding station.
+            int depAbs = (stop.dayOfJourney - 1) * 1440 + stop.departureMin;
+            // Calculate absolute arrival time at the destination station.
+            int arrAbs = (dest.dayOfJourney - 1) * 1440 + dest.arrivalMin;
+            
+            // Calculate travel time. Handle cases where arrival is on a subsequent day.
             int travelTime = arrAbs - depAbs;
-            if (travelTime < 0) continue; 
+            if (travelTime < 0) {
+                // If arrival is before departure, it must be on a later day.
+                // This can happen if the train crosses midnight multiple times or if dayOfJourney is not strictly increasing.
+                // For simplicity, we assume it's the next day if travelTime is negative.
+                // A more robust solution might involve checking dayOfJourney difference.
+                travelTime += 1440; 
+            }
+            if (travelTime < 0) continue; // If still negative, it's an invalid leg.
 
-            int dist = to.distanceKm - from.distanceKm;
-            if (dist < 0) dist = 0;
+            // Calculate physical distance for this segment.
+            int dist = dest.distanceKm - stop.distanceKm;
+            if (dist < 0) dist = 0; // Distance should not be negative.
 
+            // Create a new Edge object for this skip-stop journey.
             Edge e;
-            e.toStation     = to.stationId;
-            e.distanceKm    = dist;
-            e.travelTimeMin = travelTime;
-            e.trainId       = t.id;
-            e.fromStopIdx   = i;
-            e.toStopIdx     = j;
+            e.toStation     = dest.stationId; // Destination station ID.
+            e.distanceKm    = dist;           // Physical distance of this segment.
+            e.travelTimeMin = travelTime;     // Total travel time for this segment.
+            e.trainId       = t.id;           // ID of the train.
+            e.fromStopIdx   = i;              // Index of the boarding stop.
+            e.toStopIdx     = j;              // Index of the alighting stop.
 
-            adj[from.stationId].push_back(e);
+            // Add the edge to the adjacency list of the boarding station.
+            adj[stop.stationId].push_back(e);
         }
     }
 
+    // Populate stationToTrains mapping: for each stop, add the train's ID to the station's list.
     for (auto& ss : t.schedule) {
         stationToTrains[ss.stationId].push_back(t.id);
     }
