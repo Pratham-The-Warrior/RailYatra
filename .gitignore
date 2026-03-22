@@ -37,6 +37,7 @@ sample.json
 engine/route_engine.exe
 train_pdf/
 *.txt
+!requirements.txt
 status_*.json
 html_*.html
 final_*.json
