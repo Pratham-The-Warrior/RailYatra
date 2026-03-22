@@ -5,6 +5,8 @@ import sys
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
+import os
+from urllib.parse import quote
 
 # --- Constants & Configuration ---
 BASE_URL = "https://enquiry.indianrail.gov.in/mntes/"
@@ -25,6 +27,7 @@ DEFAULT_HEADERS = {
     'Sec-Ch-Ua-Platform': '"Windows"',
     'Cache-Control': 'max-age=0'
 }
+SCRAPER_API_KEY = os.environ.get('SCRAPER_API_KEY')
 
 class RailRoutePro:
     """
@@ -53,9 +56,15 @@ class RailRoutePro:
             try:
                 # Add a small delay between retries
                 if attempt > 0:
-                    time.sleep(1)
+                    time.sleep(0.5)
                 
-                res = self.session.get(f"{BASE_URL}GetCSRFToken?t={timestamp}", timeout=10)
+                target_url = f"{BASE_URL}GetCSRFToken?t={timestamp}"
+                if SCRAPER_API_KEY:
+                    final_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={quote(target_url)}"
+                else:
+                    final_url = target_url
+
+                res = self.session.get(final_url, timeout=20)
                 res.raise_for_status()
                 
                 soup = BeautifulSoup(res.text, 'html.parser')
@@ -105,8 +114,13 @@ class RailRoutePro:
         }
         
         url = f"{BASE_URL}tr?opt=TrainRunning&subOpt=FindRunningInstance"
+        if SCRAPER_API_KEY:
+            final_url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={quote(url)}"
+        else:
+            final_url = url
+
         try:
-            response = self.session.post(url, data=payload, timeout=20)
+            response = self.session.post(final_url, data=payload, timeout=25)
             response.raise_for_status()
         except Exception as e:
             return {"error": f"Connection failed: {str(e)}"}
