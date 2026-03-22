@@ -6,6 +6,9 @@ const engine = require('./services/engine.service');
 
 const app = express();
 
+// Trust the reverse proxy (Railway, Render, etc.) to allow correct rate limiting
+app.set('trust proxy', 1);
+
 /**
  * Global Middleware
  */
