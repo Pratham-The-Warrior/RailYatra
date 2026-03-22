@@ -10,10 +10,20 @@ import re
 BASE_URL = "https://enquiry.indianrail.gov.in/mntes/"
 DEFAULT_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Referer': BASE_URL,
-    'X-Requested-With': 'XMLHttpRequest',
-    'Accept': '*/*',
-    'Accept-Language': 'en-US,en;q=0.9'
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'DNT': '1',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+    'Sec-Ch-Ua-Mobile': '?0',
+    'Sec-Ch-Ua-Platform': '"Windows"',
+    'Cache-Control': 'max-age=0'
 }
 
 class RailRoutePro:
@@ -36,17 +46,38 @@ class RailRoutePro:
             cleaned = cleaned.replace(word, "")
         return " ".join(cleaned.split()).strip()
 
-    def _get_csrf_token(self):
-        """Fetches the required security token for search requests."""
-        timestamp = int(time.time() * 1000)
-        try:
-            res = self.session.get(f"{BASE_URL}GetCSRFToken?t={timestamp}", timeout=10)
-            token_tag = BeautifulSoup(res.text, 'html.parser').find('input')
-            if not token_tag:
-                return None, None
-            return token_tag.get('name'), token_tag.get('value')
-        except Exception:
-            return None, None
+    def _get_csrf_token(self, retries=2):
+        """Fetches the required security token for search requests with retries."""
+        for attempt in range(retries + 1):
+            timestamp = int(time.time() * 1000)
+            try:
+                # Add a small delay between retries
+                if attempt > 0:
+                    time.sleep(1)
+                
+                res = self.session.get(f"{BASE_URL}GetCSRFToken?t={timestamp}", timeout=10)
+                res.raise_for_status()
+                
+                soup = BeautifulSoup(res.text, 'html.parser')
+                token_tag = soup.find('input')
+                
+                if token_tag:
+                    name = token_tag.get('name')
+                    value = token_tag.get('value')
+                    if name and value:
+                        return name, value
+                
+                # If we get here, the response didn't have the token.
+                # It might be an error page or a "Your IP is blocked" page.
+                if attempt == retries:
+                    snippet = res.text[:200].replace('\n', ' ')
+                    return None, f"Token tag missing. Response snippet: {snippet}"
+                    
+            except Exception as e:
+                if attempt == retries:
+                    return None, f"Token request failed: {str(e)}"
+        
+        return None, "All attempts to acquire security token failed."
 
     def get_status(self, train_no, day_offset=0, save_raw=False):
         """
@@ -63,7 +94,8 @@ class RailRoutePro:
 
         t_name, t_val = self._get_csrf_token()
         if not t_val:
-            return {"error": "Security token acquisition failed. Service might be down."}
+            # t_name contains the error message if t_val is None
+            return {"error": f"Security token acquisition failed: {t_name or 'Unknown reason'}"}
 
         payload = {
             'trainNo': train_no,
