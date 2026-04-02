@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { TrainSchedule, ScheduleItem } from '../../pages/Schedules'; // Assume types are in types.ts or exported from Schedules.tsx
 import { titleCase, computeHalt } from '../../pages/Schedules';
+import { BackButton } from '../Common/BackButton';
 
 interface SchedulesResultProps {
     schedule: TrainSchedule;
@@ -40,13 +41,8 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                     transition={{ duration: 0.4, ease: [.22, 1, .36, 1] }}
                 >
                     {/* ── Top bar: back + mini search ── */}
-                    <div className="flex items-center gap-3 mb-4 md:mb-5">
-                        <button
-                            onClick={handleBack}
-                            className="text-sm text-slate-500 hover:text-orange-500 font-medium transition-colors flex items-center gap-1.5"
-                        >
-                            ← Back
-                        </button>
+                    <div className="flex items-center gap-3 mb-4 md:mb-6">
+                        <BackButton onClick={handleBack} sticky offset={64} className="md:static" />
                         <form onSubmit={handleSubmit} className="relative ml-auto max-w-[180px] md:max-w-[220px] hidden sm:block">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                             <input

@@ -1,7 +1,6 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { SearchHero } from './SearchHero';
 import { LandingDashboard } from './LandingDashboard';
+import { BackButton } from '../Common/BackButton';
 
 interface LandingViewProps {
     trainNumber: string;
@@ -19,13 +18,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             {onNavigate && (
                 <div className="absolute top-20 md:top-24 left-0 w-full z-20 pointer-events-none">
                     <div className="max-w-[1120px] mx-auto px-4 md:px-5 flex justify-start">
-                        <button
-                            onClick={() => onNavigate('home')}
-                            className="pointer-events-auto inline-flex items-center justify-center gap-2 text-slate-500 hover:text-orange-500 text-sm font-semibold transition-colors group"
-                        >
-                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                            Back to Home
-                        </button>
+                        <BackButton onClick={() => onNavigate('home')} label="Back to Home" className="pointer-events-auto" />
                     </div>
                 </div>
             )}

@@ -1,9 +1,9 @@
-import React from 'react';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LiveStatusResponse, parseTimeAndDate } from '../../pages/LiveStatus';
 import { JourneyTimeline } from './JourneyTimeline';
 import { TrackingSidebar } from './TrackingSidebar';
+import { BackButton } from '../Common/BackButton';
 
 interface TrackingResultsProps {
     statusData: LiveStatusResponse;
@@ -54,15 +54,7 @@ export const TrackingResults: React.FC<TrackingResultsProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    <button
-                        onClick={onBack}
-                        className="flex items-center gap-2 sm:gap-3 text-slate-500 hover:text-slate-800 font-bold text-[11px] tracking-widest uppercase mb-5 sm:mb-8 transition-colors group"
-                    >
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center group-hover:bg-slate-50 transition-colors">
-                            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-600" />
-                        </div>
-                        Back to Search
-                    </button>
+                    <BackButton onClick={onBack} label="Back to Search" sticky offset={64} className="mb-5 sm:mb-8" />
 
                     {/* ═══ HERO CARD ═══ */}
                     <div className="bg-white rounded-2xl md:rounded-[40px] p-4 sm:p-6 md:p-10 lg:px-14 mb-5 sm:mb-8 md:mb-10 shadow-sm border border-slate-100">
