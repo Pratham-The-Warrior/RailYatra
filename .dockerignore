@@ -8,3 +8,9 @@ train_pdf
 *.exe
 *.o
 route_engine
+
+# Scraper (not used in deployment)
+backend/src/scripts/
+backend/requirements.txt
+backend/tests/
+backend/venv/

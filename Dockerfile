@@ -1,13 +1,12 @@
 # --- Stage 1: Engine Builder ---
-FROM debian:bookworm-slim AS engine-builder
-RUN apt-get update && apt-get install -y --no-install-recommends g++ make \
-    && rm -rf /var/lib/apt/lists/*
+FROM alpine:3.20 AS engine-builder
+RUN apk add --no-cache g++ make
 WORKDIR /app/engine
 COPY engine/ .
 RUN make -j$(nproc)
 
 # --- Stage 2: Frontend Builder ---
-FROM node:20-bookworm-slim AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install --frozen-lockfile || npm install
@@ -15,37 +14,27 @@ COPY frontend/ .
 RUN npm run build
 
 # --- Stage 3: Final Production Image ---
-FROM node:20-bookworm-slim
+FROM node:20-alpine
 WORKDIR /app
 
-# Install runtime dependencies: C++ standard library and Python 3 for scraper
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libstdc++6 \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Optimize Python environment by installing dependencies globally
-# --break-system-packages is required for Debian 12+ globally, perfectly valid in Docker containers
-COPY backend/requirements.txt ./
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
-
-# Setup Backend
+# No runtime dependencies needed for static engine!
+# Only copy production backend dependencies
 WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm install --production --frozen-lockfile || npm install --production
 
-# Bring in compiled engine and built frontend
+# Compiled engine + built frontend
 COPY --from=engine-builder /app/engine/route_engine /app/engine/route_engine
 COPY --from=frontend-builder /app/frontend/dist/ /app/frontend/dist/
 
-# Copy data and source code (COPY only what's needed)
+# Essential Data and backend source code
 WORKDIR /app
-COPY master_train_data*.json ./
-COPY stations.json ./stations.json
+COPY master_train_data*.json stations.json ./
 COPY backend/ ./backend/
 
-# Runtime Configuration
+# Cleanup backend source in final image (remove tests if they slipped in)
+RUN rm -rf backend/tests backend/venv
+
 ENV PORT=3000
 EXPOSE 3000
 
