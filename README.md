@@ -4,7 +4,7 @@
 
 ---
 
-- **Live Station Search**: Autocomplete search for stations.
+- **Intelligent Station Search**: Fuzzy-matching autocomplete supporting keyboard accessibility and robust typo-tolerance.
 - **Live Train Status**: Real-time train tracking via a refined Python scraper with an advanced **Concurrency-Controlled execution model** (Queueing, Caching, and Coalescing).
 - **Premium Collections**: Dedicated high-end visual charts for special train categories like Vande Bharat, Tejas, and Gatiman.
 - **Modular Data System**: Easily add new train categories by simply adding JSON data files.
@@ -19,6 +19,7 @@
 - **Multi-Criteria Optimization**: Sort routes by travel time, total distance, or minimum switches.
 - **Best 10 Routes**: Returns up to 10 diverse routes — direct trains first, then 1-transfer, then 2-transfer, ranked by total travel time within each tier.
 - **Intelligent Transfers**: Validates connecting times at junctions (minimum 30 min buffer, max wait limit configurable).
+- **Intelligent Station Search**: Built-in typo-tolerance (`fuse.js`) resolving query variations inside an interactive, keyboard-navigable UI dropdown with live match highlighting.
 - **Premium UI**: Modern "RailPath" aesthetic with glassmorphism, smooth animations, and a clean white theme.
 
 ---
@@ -158,7 +159,7 @@ Calculates routes between two stations.
 | `top_k` | `Int` | Number of results to return | `10` |
 
 ### `GET /api/stations`
-Autocomplete endpoint for station search. Returns top 10 matches.
+Fuzzy-autocomplete endpoint for station search powered by Fuse.js. Returns top 10 matches ranked by Levenshtein distance relevance (intelligently handling minor spelling variations like "dehli").
 
 ### `GET /api/category/:category`
 Fetches a list of trains for a specific collection (e.g., `vandebharat`, `tejas`). Returns premium route chart data.
