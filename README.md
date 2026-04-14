@@ -13,7 +13,7 @@
 
 ## 🚀 Key Features
 
-- **Blazing Fast Engine**: Layered multi-pass Dijkstra written in C++17, finding the best 10 routes in under 5ms.
+- **Blazing Fast Engine**: Layered multi-pass Dijkstra written in C++17, finding the best 10 routes in under 10ms.
 - **Live Train Status**: Real-time tracking with station-wise delay info, platform updates, and current location — powered by a **concurrency-limited Python queue** with 30s response caps.
 - **Premium Route Charts**: Modular "Railway Chart" system for special train categories with sequential serial numbers and detailed timings.
 - **Multi-Criteria Optimization**: Sort routes by travel time, total distance, or minimum switches.
