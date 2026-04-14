@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "express": "^5.2.1",
-    "express-rate-limit": "^8.3.1"
+    "express-rate-limit": "^8.3.1",
+    "fuse.js": "^7.3.0"
   }
 }
