@@ -5,7 +5,6 @@
 ---
 
 - **Intelligent Station Search**: Fuzzy-matching autocomplete supporting keyboard accessibility and robust typo-tolerance.
-- **Live Train Status**: Real-time train tracking via a refined Python scraper with an advanced **Concurrency-Controlled execution model** (Queueing, Caching, and Coalescing).
 - **Premium Collections**: Dedicated high-end visual charts for special train categories like Vande Bharat, Tejas, and Gatiman.
 - **Modular Data System**: Easily add new train categories by simply adding JSON data files.
 
@@ -14,7 +13,6 @@
 ## 🚀 Key Features
 
 - **Blazing Fast Engine**: Layered multi-pass Dijkstra written in C++17, finding the best 10 routes in under 10ms.
-- **Live Train Status**: Real-time tracking with station-wise delay info, platform updates, and current location — powered by a **concurrency-limited Python queue** with 30s response caps.
 - **Premium Route Charts**: Modular "Railway Chart" system for special train categories with sequential serial numbers and detailed timings.
 - **Multi-Criteria Optimization**: Sort routes by travel time, total distance, or minimum switches.
 - **Best 10 Routes**: Returns up to 10 diverse routes — direct trains first, then 1-transfer, then 2-transfer, ranked by total travel time within each tier.
@@ -56,17 +54,11 @@ flowchart TD
     User((User)) -->|React and Vite| FE[Frontend]
     FE -->|JSON API REST| BE[ExpressJS Backend]
     BE -->|Persistent Child Process| CE[Cpp Dijkstra Engine]
-    BE -->|Task Queue| PY[Python Scraper Engine]
     CE -->|Reads Data| DATA[(JSON Train Data)]
-    PY -->|Concurrency Pool| OS[Official Sources]
 ```
 
 ### Architectural Pillars
 - **Micro-Core Engine**: To circumvent Node.js CPU bottlenecks, the mathematically heavy Layered Multi-Pass Dijkstra algorithm is offloaded to a persistent, compiled C++17 process (`route_engine.exe`). Logic is encapsulated in `src/services/engine.service.js`.
-- **Managed Live Scraper**: A lightweight, refined Python engine (`src/scripts/scraper.py`) managed by an **Asynchronous Concurrency Pool**. This ensures that even under heavy load, the server only spawns a limited number of scraper processes (Max 5) to prevent resource exhaustion.
-- **Request Coalescing & Caching**: Multiple simultaneous requests for the same train share a single scraper process (coalescing). Results are cached for **2 minutes** to provide instant responses for popular trains.
-- **Strict 30s Response Cap**: A global timeout ensures that users always receive a response within 30 seconds. If the data source is slow or the queue is full, the system responds with a 503 "Try again later" error to maintain UI responsiveness.
-- **IP Rate Limiting**: Dedicated rate limiting (10 requests / 15 mins) prevents individual client abuse.
 - **Industrial Routing**: The app follows a strict **Controller-Service-Route** pattern.
     - `src/api/routes/`: Defines the endpoints.
     - `src/api/controllers/`: Handles the business logic and engine mediation.
@@ -78,7 +70,6 @@ flowchart TD
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
 - **Backend / Delivery Layer**: Node.js, Express.js.
 - **Navigation Engine**: Modern C++17, `nlohmann/json` macro-library for high-speed deterministic JSON serialization.
-- **Live Status Engine**: Python 3, `requests`, `beautifulsoup4`, executed as a stateless child process for thread-safe reliability.
 
 ---
 
@@ -94,27 +85,14 @@ cd engine
 ### 2. Prepare Data
 Ensure `master_train_data.json` is present in the project root. This file contains the pre-processed schedules for all trains.
 
-### 3. Setup Python Virtual Environment (for Live Status)
-```bash
-cd backend
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-# source venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-### 4. Start the Backend
+### 3. Start the Backend
 ```bash
 cd backend
 npm install
-node server.js # Starts on Port 3000 (also auto-starts Python service on port 5050)
+node server.js # Starts on Port 3000
 ```
 
-### 5. Start the Frontend
+### 4. Start the Frontend
 ```bash
 cd frontend
 npm install
@@ -127,11 +105,10 @@ npm run dev # Starts on Port 5173
 backend/
 ├── src/
 │   ├── api/
-│   │   ├── controllers/   # Business logic (Route search, Scraper mediation)
+│   │   ├── controllers/   # Business logic (Route search)
 │   │   └── routes/        # API route definitions
 │   ├── config/            # Cross-platform environment configuration
 │   ├── services/          # Persistent background service wrappers
-│   ├── scripts/           # Python scraper logic
 │   └── app.js             # Express application & middleware setup
 ├── server.js              # Entry point
 ├── package.json
@@ -167,12 +144,6 @@ Fetches a list of trains for a specific collection (e.g., `vandebharat`, `tejas`
 ### `GET /api/schedule/:trainNumber`
 Fetches the full schedule for a specific train. Returns station stops, arrival/departure times, and operating days.
 
-### `GET /api/livestatus/:trainNumber`
-Fetches real-time running status for a train by scraping NTES. Returns:
-- **`meta`**: `train_no`, `start_date`, `current_location`, `fetched_at`, `total_stations`
-- **`itinerary`**: Array of station stops with `station`, `platform`, `status`, `is_delayed`, `is_source`, `is_destination`, and `timings` (`sch_arr`, `act_arr`, `sch_dep`, `act_dep`)
-- Responses are cached for 2 minutes. Cached responses include `_cached: true`.
-
 ### `GET /api/pdf/:trainNumber`
 Serves the PDF timetable for the requested train (if available).
 
@@ -188,11 +159,3 @@ The system includes a verification suite in `/tests`:
 Based on local system benchmarking (Intel i5/equivalent, single-process engine):
 - **Average Latency**: ~0.94 ms per route calculation.
 - **Throughput**: ~1,067 requests/second.
-
-### Live Status Performance & Reliability
-- **Live Fetch**: 5–25s (Throttled by concurrency pool)
-- **Response Capping**: 30s (Global user-facing timeout)
-- **Concurrency Limit**: Max 5 simultaneous scraper processes.
-- **Request Coalescing**: Duplicate in-flight requests for the same train number are merged into a single execution.
-- **Caching**: 2-minute TTL for all successful scrapes.
-- **Rate Limiting**: 10 requests per 15 minutes per IP to prevent scraper exhaustion.

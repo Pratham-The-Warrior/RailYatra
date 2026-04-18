@@ -5,11 +5,10 @@ This guide explains how to deploy the RailYatra engine, backend, and frontend.
 ## Prerequisites
 - [Docker](https://www.docker.com/products/docker-desktop/) installed on your machine.
 - Node.js (for local development).
-- Python 3.10+ (for live status scraper).
 
 ## 1. Local Deployment (Docker)
 
-The easiest way to run the production build locally is using Docker. This ensures the C++ engine is compiled, Python environment is provisioned with scraper dependencies, and everything is matched with the backend correctly.
+The easiest way to run the production build locally is using Docker. This ensures the C++ engine is compiled and everything is matched with the backend correctly.
 
 ### Step 1: Build the Frontend
 Ensure you have the latest frontend build:
