@@ -1,3 +1,4 @@
+# Local environment artifacts
 venv
 .venv
 node_modules
@@ -9,8 +10,5 @@ train_pdf
 *.o
 route_engine
 
-# Scraper (not used in deployment)
-backend/src/scripts/
-backend/requirements.txt
+# Backend test artifacts
 backend/tests/
-backend/venv/

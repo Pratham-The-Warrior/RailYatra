@@ -32,9 +32,6 @@ WORKDIR /app
 COPY master_train_data*.json stations.json ./
 COPY backend/ ./backend/
 
-# Cleanup backend source in final image (remove tests if they slipped in)
-RUN rm -rf backend/tests backend/venv
-
 ENV PORT=3000
 EXPOSE 3000
 
