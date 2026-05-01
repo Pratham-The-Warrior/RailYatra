@@ -40,7 +40,7 @@ Visit `http://localhost:3000` to use the application.
 - **DigitalOcean App Platform**: Excellent for containerized apps.
 
 ### General Steps for Cloud
-1.  **Push to GitHub**: Ensure your `Dockerfile`, `backend/`, `frontend/dist/`, `engine/`, and `master_train_data.json` are all pushed to your repository.
+1.  **Push to GitHub**: Ensure your `Dockerfile`, `backend/`, `frontend/dist/`, `engine/`, `stations.json`, `city_stations.json`, and `master_train_data.json` are all pushed to your repository.
 2.  **Connect to Platform**: Point your cloud provider to your GitHub repo.
 3.  **Automatic Detection**: Most platforms (like Railway or Render) will detect the `Dockerfile` in the root and build it automatically.
 4.  **Environment Variables**: 

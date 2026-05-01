@@ -32,7 +32,6 @@ int Graph::getOrCreateStation(const std::string& code, const std::string& name) 
     // Store the station's metadata. If name is empty, use code as name.
     stations.push_back({id, code, name.empty() ? code : name});
     codeToId[code] = id; // Map the station code to its new ID.
-    adj.push_back({}); // Initialize an empty adjacency list for this new station.
     stationToTrains.push_back({}); // Initialize an empty list for trains stopping at this station.
     return id; // Return the ID of the newly created station.
 }
@@ -52,11 +51,7 @@ std::string Graph::getStationName(int id) const {
     return std::string("Unknown");
 }
 
-const std::vector<Edge>& Graph::edgesFrom(int stationId) const {
-    static const std::vector<Edge> empty;
-    if (stationId < 0 || stationId >= (int)adj.size()) return empty;
-    return adj[stationId];
-}
+
 
 const std::vector<int>& Graph::trainsAtStation(int stationId) const {
     static const std::vector<int> empty;
@@ -147,91 +142,6 @@ void Graph::processTrainData(json& jData) {
 
     // If the schedule is empty after parsing, this train is invalid.
     if (t.schedule.empty()) return;
-
-    // ── Build edges ────────────
-    // We create "edges" for every possible leg of the journey. 
-    // If a train goes A -> B -> C, we create edges for:
-    // A -> B, B -> C (direct) AND A -> C (skip-stop).
-    // This pre-computation makes Dijkstra much faster because 
-    // the 'cost' of staying on the same train is baked into a single edge.
-
-    // First loop: Create direct edges between consecutive stops.
-    for (int i = 0; i < (int)t.schedule.size() - 1; ++i) {
-        const auto& from = t.schedule[i];     // The starting stop of the leg.
-        const auto& to   = t.schedule[i + 1]; // The next stop in the schedule.
-
-        // Ensure both stops have valid departure and arrival times.
-        if (from.departureMin < 0 || to.arrivalMin < 0) continue;
-
-        // Calculate absolute departure and arrival times in minutes from journey start.
-        int depAbs = (from.dayOfJourney - 1) * 1440 + from.departureMin;
-        int arrAbs = (to.dayOfJourney   - 1) * 1440 + to.arrivalMin;
-        
-        // Basic sanity check for duration.
-        int travelTime = arrAbs - depAbs;
-        if (travelTime < 0) travelTime += 1440; // Handles simple overnight legs by adding a day.
-
-        // Calculate distance for this leg.
-        int dist = to.distanceKm - from.distanceKm;
-        if (dist < 0) dist = 0; // Distance should not be negative.
-
-        // Create a new Edge object.
-        Edge e;
-        e.toStation     = to.stationId;     // Destination station ID.
-        e.distanceKm    = dist;             // Distance of this leg.
-        e.travelTimeMin = travelTime;       // Travel time for this leg.
-        e.trainId       = t.id;             // ID of the train.
-        e.fromStopIdx   = i;                // Index of the departure stop in the train's schedule.
-        e.toStopIdx     = i + 1;            // Index of the arrival stop in the train's schedule.
-
-        // Add the edge to the adjacency list of the departure station.
-        adj[from.stationId].push_back(e);
-    }
-
-    // Second loop: Generate skip-stop edges for all subsequent stations in the schedule.
-    // This pre-calculates the travel cost between any two stops on the same train,
-    // which significantly speeds up the Dijkstra search by reducing node expansions.
-    for (int i = 0; i < (int)t.schedule.size(); ++i) {
-        const auto& stop = t.schedule[i]; // The boarding station for this potential journey.
-        if (stop.departureMin < 0) continue; // Skip if no departure time from this stop.
-
-        for (int j = i + 1; j < (int)t.schedule.size(); ++j) { // Iterate through all subsequent stops.
-            const auto& dest = t.schedule[j]; // The future destination station.
-            if (dest.arrivalMin < 0) continue; // Skip if no arrival time at the destination.
-
-            // Calculate absolute departure time from the boarding station.
-            int depAbs = (stop.dayOfJourney - 1) * 1440 + stop.departureMin;
-            // Calculate absolute arrival time at the destination station.
-            int arrAbs = (dest.dayOfJourney - 1) * 1440 + dest.arrivalMin;
-            
-            // Calculate travel time. Handle cases where arrival is on a subsequent day.
-            int travelTime = arrAbs - depAbs;
-            if (travelTime < 0) {
-                // If arrival is before departure, it must be on a later day.
-                // This can happen if the train crosses midnight multiple times or if dayOfJourney is not strictly increasing.
-                // For simplicity, we assume it's the next day if travelTime is negative.
-                // A more robust solution might involve checking dayOfJourney difference.
-                travelTime += 1440; 
-            }
-            if (travelTime < 0) continue; // If still negative, it's an invalid leg.
-
-            // Calculate physical distance for this segment.
-            int dist = dest.distanceKm - stop.distanceKm;
-            if (dist < 0) dist = 0; // Distance should not be negative.
-
-            // Create a new Edge object for this skip-stop journey.
-            Edge e;
-            e.toStation     = dest.stationId; // Destination station ID.
-            e.distanceKm    = dist;           // Physical distance of this segment.
-            e.travelTimeMin = travelTime;     // Total travel time for this segment.
-            e.trainId       = t.id;           // ID of the train.
-            e.fromStopIdx   = i;              // Index of the boarding stop.
-            e.toStopIdx     = j;              // Index of the alighting stop.
-
-            // Add the edge to the adjacency list of the boarding station.
-            adj[stop.stationId].push_back(e);
-        }
-    }
 
     // Populate stationToTrains mapping: for each stop, add the train's ID to the station's list.
     for (auto& ss : t.schedule) {

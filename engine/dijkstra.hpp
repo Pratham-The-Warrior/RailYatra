@@ -46,6 +46,18 @@ public:
         SortMode sortMode = SortMode::TIME
     );
 
+    // Multi-source, multi-destination variant for "All Stations" searches.
+    // Seeds Dijkstra with ALL source stations and checks arrival at ANY dest station.
+    std::vector<RouteResult> findRoutesMulti(
+        const std::vector<std::string>& fromCodes,
+        const std::vector<std::string>& toCodes,
+        const std::string& dateStr,
+        int maxSwitches   = 5,
+        int maxWaitMin    = 600,
+        int topK          = 10,
+        SortMode sortMode = SortMode::TIME
+    );
+
     static json toJson(const std::vector<RouteResult>& results);
 
 private:

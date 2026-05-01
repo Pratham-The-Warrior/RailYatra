@@ -29,7 +29,7 @@ COPY --from=frontend-builder /app/frontend/dist/ /app/frontend/dist/
 
 # Essential Data and backend source code
 WORKDIR /app
-COPY master_train_data*.json stations.json ./
+COPY master_train_data*.json stations.json city_stations.json ./
 COPY backend/ ./backend/
 
 ENV PORT=3000

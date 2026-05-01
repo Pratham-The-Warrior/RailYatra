@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Route, SearchParams } from "@/types";
 import { SearchForm } from "@/components/SearchForm";
 import { RouteCard } from "@/components/RouteCard";
+import { RouteCardCompact } from "@/components/RouteCardCompact";
+import { LayoutToggle, ViewLayout } from "@/components/LayoutToggle";
 import { Calendar, History, ArrowRight, Star, Activity } from "lucide-react";
 
 const STORAGE_KEY = 'railyatra_recent_searches';
@@ -29,6 +31,7 @@ export function Home({ onNavigate }: HomeProps) {
     const [error, setError] = useState<string | null>(null);
     const [searched, setSearched] = useState(false);
     const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+    const [viewLayout, setViewLayout] = useState<ViewLayout>('list');
 
     // Load recent searches from localStorage on mount
     useEffect(() => {
@@ -258,7 +261,7 @@ export function Home({ onNavigate }: HomeProps) {
             </section>
 
             {/* Results Section */}
-            <div id="results" className="max-w-5xl mx-auto px-4 py-8 md:py-0">
+            <div id="results" className="max-w-7xl mx-auto px-4 py-8 md:py-0">
                 {error && (
                     <div className="mt-8 p-6 bg-red-50 border border-red-100 text-red-600 rounded-3xl text-sm font-bold shadow-sm flex items-center gap-3">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -276,11 +279,19 @@ export function Home({ onNavigate }: HomeProps) {
 
                 {routes.length > 0 && (
                     <div className="mt-16 md:mt-24 space-y-8 md:space-y-12">
-                        <div className="flex items-center gap-4">
-                            <h2 className="text-2xl md:text-4xl font-black text-slate-900 font-display">Top {routes.length} Optimal Routes</h2>
-                            <div className="flex-1 h-px bg-slate-100" />
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-4 min-w-0">
+                                <h2 className="text-2xl md:text-4xl font-black text-slate-900 font-display shrink-0">Top {routes.length} Optimal Routes</h2>
+                                <div className="flex-1 h-px bg-slate-100 hidden sm:block" />
+                            </div>
+                            {/* Toggle only visible on desktop */}
+                            <div className="hidden lg:block shrink-0">
+                                <LayoutToggle layout={viewLayout} onToggle={setViewLayout} />
+                            </div>
                         </div>
-                        <div className="grid gap-8 md:gap-12">
+
+                        {/* Mobile: always list view */}
+                        <div className="lg:hidden grid gap-8">
                             {routes.map((route, idx) => (
                                 <motion.div
                                     key={idx}
@@ -291,6 +302,53 @@ export function Home({ onNavigate }: HomeProps) {
                                     <RouteCard route={route} index={idx} />
                                 </motion.div>
                             ))}
+                        </div>
+
+                        {/* Desktop: togglable list/cards */}
+                        <div className="hidden lg:block">
+                            <AnimatePresence mode="wait">
+                                {viewLayout === 'list' ? (
+                                    <motion.div
+                                        key="list"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.25 }}
+                                        className="grid gap-12"
+                                    >
+                                        {routes.map((route, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                initial={{ opacity: 0, y: 16 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.4, delay: idx * 0.1 }}
+                                            >
+                                                <RouteCard route={route} index={idx} />
+                                            </motion.div>
+                                        ))}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="cards-grid"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.25 }}
+                                        className="grid grid-cols-3 gap-6"
+                                    >
+                                        {routes.map((route, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ duration: 0.3, delay: idx * 0.06 }}
+                                            >
+                                                <RouteCardCompact route={route} index={idx} />
+                                            </motion.div>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 )}

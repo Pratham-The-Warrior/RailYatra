@@ -34,4 +34,6 @@ export interface SearchParams {
 export interface Station {
     code: string;
     name: string;
+    isCity?: boolean;
+    stationCount?: number;
 }

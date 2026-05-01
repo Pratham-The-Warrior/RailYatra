@@ -76,6 +76,62 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
+            // ── Multi-Route Request (All Stations) ──────────────────
+            if (type == "multi_route") {
+                if (!req.contains("from") || !req.contains("to") || !req.contains("date")) {
+                    throw std::runtime_error("Missing required fields: from, to, date for multi_route request");
+                }
+
+                // Parse from/to as arrays of station codes
+                std::vector<std::string> fromCodes;
+                std::vector<std::string> toCodes;
+
+                if (req["from"].is_array()) {
+                    for (auto& code : req["from"])
+                        fromCodes.push_back(code.get<std::string>());
+                } else {
+                    fromCodes.push_back(req["from"].get<std::string>());
+                }
+
+                if (req["to"].is_array()) {
+                    for (auto& code : req["to"])
+                        toCodes.push_back(code.get<std::string>());
+                } else {
+                    toCodes.push_back(req["to"].get<std::string>());
+                }
+
+                std::string date = req["date"].get<std::string>();
+                int maxSwitches = req.value("max_switches", 4);
+                int maxWait     = req.value("max_wait", 600);
+                int topK        = req.value("top_k", 10);
+
+                SortMode sortMode = SortMode::TIME;
+                if (req.contains("sort_by")) {
+                    std::string sb = req["sort_by"].get<std::string>();
+                    if (sb == "distance") sortMode = SortMode::DISTANCE;
+                    else if (sb == "switches") sortMode = SortMode::SWITCHES;
+                }
+
+                auto results = solver.findRoutesMulti(
+                    fromCodes, toCodes, date, maxSwitches, maxWait, topK, sortMode);
+
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::milli> elapsed = endTime - startTime;
+
+                json response;
+                response["request_id"] = reqId;
+                response["results"]    = DijkstraSolver::toJson(results);
+                response["elapsed_ms"] = elapsed.count();
+
+                std::cout << response.dump() << std::endl;
+
+                std::cerr << "MultiRoute [" << reqId << "] "
+                          << fromCodes.size() << " sources -> " << toCodes.size() << " dests"
+                          << " in " << elapsed.count() << "ms. Found "
+                          << results.size() << " routes." << std::endl;
+                continue;
+            }
+
             // ── Standard Route Request ──────────────────────────
             // Validate required fields
             if (!req.contains("from") || !req.contains("to") || !req.contains("date")) {

@@ -1,0 +1,170 @@
+{
+    "MUMBAI": {
+        "display": "Mumbai",
+        "stations": ["CSMT", "BCT", "LTT", "DR", "BDTS", "ADH", "KYN", "TNA", "PNVL"]
+    },
+    "DELHI": {
+        "display": "Delhi",
+        "stations": ["NDLS", "DLI", "NZM", "ANVT", "DSA", "DEE", "ANDI"]
+    },
+    "CHENNAI": {
+        "display": "Chennai",
+        "stations": ["MAS", "MS", "TBM", "PLMG", "ABU", "AVD"]
+    },
+    "KOLKATA": {
+        "display": "Kolkata",
+        "stations": ["HWH", "KOAA", "SDAH", "SHM", "BPQ", "DH"]
+    },
+    "BENGALURU": {
+        "display": "Bengaluru",
+        "stations": ["SBC", "BAND", "KJM", "YPR", "BYPL"]
+    },
+    "HYDERABAD": {
+        "display": "Hyderabad",
+        "stations": ["SC", "HYB", "KCG", "FM", "NM", "LPI"]
+    },
+    "PUNE": {
+        "display": "Pune",
+        "stations": ["PUNE", "SUR", "CCH", "AKRD", "LNL"]
+    },
+    "AHMEDABAD": {
+        "display": "Ahmedabad",
+        "stations": ["ADI", "SBIS"]
+    },
+    "JAIPUR": {
+        "display": "Jaipur",
+        "stations": ["JP", "DPA", "GADW"]
+    },
+    "LUCKNOW": {
+        "display": "Lucknow",
+        "stations": ["LKO", "LJN", "ASH", "AMG"]
+    },
+    "VARANASI": {
+        "display": "Varanasi",
+        "stations": ["BSB", "BNRS", "DDU"]
+    },
+    "PATNA": {
+        "display": "Patna",
+        "stations": ["PNBE", "PPTA", "DNR", "RJPB"]
+    },
+    "BHOPAL": {
+        "display": "Bhopal",
+        "stations": ["RKMP", "BPL"]
+    },
+    "NAGPUR": {
+        "display": "Nagpur",
+        "stations": ["NGP", "AJNI"]
+    },
+    "COIMBATORE": {
+        "display": "Coimbatore",
+        "stations": ["CBE", "PLNI"]
+    },
+    "GOA": {
+        "display": "Goa",
+        "stations": ["MAO", "KRMI", "THVM"]
+    },
+    "THIRUVANANTHAPURAM": {
+        "display": "Thiruvananthapuram",
+        "stations": ["TVC", "TVCY"]
+    },
+    "KOCHI": {
+        "display": "Kochi",
+        "stations": ["ERS", "AWY"]
+    },
+    "KANPUR": {
+        "display": "Kanpur",
+        "stations": ["CNB", "CPNR"]
+    },
+    "AGRA": {
+        "display": "Agra",
+        "stations": ["AGC", "AF", "IDH"]
+    },
+    "AMRITSAR": {
+        "display": "Amritsar",
+        "stations": ["ASR"]
+    },
+    "VISAKHAPATNAM": {
+        "display": "Visakhapatnam",
+        "stations": ["VSKP"]
+    },
+    "INDORE": {
+        "display": "Indore",
+        "stations": ["INDB"]
+    },
+    "SURAT": {
+        "display": "Surat",
+        "stations": ["ST", "UDN"]
+    },
+    "VADODARA": {
+        "display": "Vadodara",
+        "stations": ["BRC"]
+    },
+    "PRAYAGRAJ": {
+        "display": "Prayagraj",
+        "stations": ["PRYJ", "PCOI", "NYN"]
+    },
+    "VIJAYAWADA": {
+        "display": "Vijayawada",
+        "stations": ["BZA"]
+    },
+    "MYSURU": {
+        "display": "Mysuru",
+        "stations": ["MYS"]
+    },
+    "RANCHI": {
+        "display": "Ranchi",
+        "stations": ["RNC", "HTE"]
+    },
+    "DEHRADUN": {
+        "display": "Dehradun",
+        "stations": ["DDN"]
+    },
+    "CHANDIGARH": {
+        "display": "Chandigarh",
+        "stations": ["CDG", "UMB"]
+    },
+    "GORAKHPUR": {
+        "display": "Gorakhpur",
+        "stations": ["GKP"]
+    },
+    "GWALIOR": {
+        "display": "Gwalior",
+        "stations": ["GWL"]
+    },
+    "JABALPUR": {
+        "display": "Jabalpur",
+        "stations": ["JBP"]
+    },
+    "JAMMU": {
+        "display": "Jammu",
+        "stations": ["JAT", "SVDK"]
+    },
+    "JODHPUR": {
+        "display": "Jodhpur",
+        "stations": ["JU"]
+    },
+    "MADURAI": {
+        "display": "Madurai",
+        "stations": ["MDU"]
+    },
+    "MANGALORE": {
+        "display": "Mangalore",
+        "stations": ["MAQ", "MAJN"]
+    },
+    "RAIPUR": {
+        "display": "Raipur",
+        "stations": ["R"]
+    },
+    "HOWRAH": {
+        "display": "Howrah",
+        "stations": ["HWH"]
+    },
+    "SECUNDERABAD": {
+        "display": "Secunderabad",
+        "stations": ["SC"]
+    },
+    "TRIVANDRUM": {
+        "display": "Trivandrum",
+        "stations": ["TVC", "TVCY"]
+    }
+}

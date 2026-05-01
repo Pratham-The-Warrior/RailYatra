@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Loader2, X } from 'lucide-react';
+import { MapPin, Loader2, X, Building2 } from 'lucide-react';
 import { Station } from '@/types';
 
 interface StationSearchInputProps {
@@ -80,7 +80,7 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
     }, [suggestions, isOpen]);
 
     const handleSelect = (s: Station) => {
-        const display = `${s.name} (${s.code})`;
+        const display = s.isCity ? s.name : `${s.name} (${s.code})`;
         setQuery(display);
         onChange(s.code, display);
         setIsOpen(false);
@@ -97,7 +97,6 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
-            // Optional: scroll selected item into view could be added here
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
@@ -181,27 +180,80 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
                                     <span className="text-sm font-medium">Searching stations...</span>
                                 </div>
                             ) : suggestions.length > 0 ? (
-                                suggestions.map((s, index) => (
-                                    <button
-                                        key={s.code}
-                                        onClick={() => handleSelect(s)}
-                                        className={`w-full px-4 py-3 rounded-xl flex items-center justify-between text-left transition-all group ${selectedIndex === index ? 'bg-orange-50 ring-1 ring-orange-200' : 'hover:bg-orange-50'}`}
-                                        type="button"
-                                        onMouseEnter={() => setSelectedIndex(index)}
-                                    >
-                                        <div className="flex flex-col">
-                                            <span className={`font-bold transition-colors ${selectedIndex === index ? 'text-orange-600' : 'text-slate-800 group-hover:text-orange-600'}`}>
-                                                {highlightMatch(s.name, query)}
-                                            </span>
-                                            <span className={`text-[10px] font-bold uppercase tracking-wider ${selectedIndex === index ? 'text-orange-400' : 'text-slate-400 group-hover:text-orange-400'}`}>
-                                                {highlightMatch(s.code, query)}
-                                            </span>
-                                        </div>
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${selectedIndex === index ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-slate-50 border border-slate-100 text-slate-300 group-hover:bg-orange-100 group-hover:text-orange-600 group-hover:border-orange-200'}`}>
-                                            <MapPin size={14} />
-                                        </div>
-                                    </button>
-                                ))
+                                suggestions.map((s, index) => {
+                                    const isCity = s.isCity || s.code.startsWith('CITY:');
+
+                                    if (isCity) {
+                                        // ── Special "All Stations" city entry ──
+                                        return (
+                                            <button
+                                                key={s.code}
+                                                onClick={() => handleSelect(s)}
+                                                className={`w-full px-4 py-3.5 rounded-xl flex items-center justify-between text-left transition-all group ${
+                                                    selectedIndex === index
+                                                        ? 'bg-gradient-to-r from-orange-50 to-amber-50 ring-1 ring-orange-200'
+                                                        : 'hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50'
+                                                }`}
+                                                type="button"
+                                                onMouseEnter={() => setSelectedIndex(index)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                                                        selectedIndex === index
+                                                            ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
+                                                            : 'bg-orange-100 text-orange-600 group-hover:bg-orange-500 group-hover:text-white group-hover:shadow-md group-hover:shadow-orange-200'
+                                                    }`}>
+                                                        <Building2 size={16} />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className={`font-bold text-[15px] transition-colors ${
+                                                            selectedIndex === index
+                                                                ? 'text-orange-700'
+                                                                : 'text-slate-800 group-hover:text-orange-700'
+                                                        }`}>
+                                                            {highlightMatch(s.name, query)}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-slate-400 mt-0.5">
+                                                            Search across all major stations
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {s.stationCount && (
+                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-all ${
+                                                        selectedIndex === index
+                                                            ? 'bg-orange-500 text-white'
+                                                            : 'bg-orange-100 text-orange-600 group-hover:bg-orange-500 group-hover:text-white'
+                                                    }`}>
+                                                        {s.stationCount} stn
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    }
+
+                                    // ── Regular station entry (unchanged) ──
+                                    return (
+                                        <button
+                                            key={s.code}
+                                            onClick={() => handleSelect(s)}
+                                            className={`w-full px-4 py-3 rounded-xl flex items-center justify-between text-left transition-all group ${selectedIndex === index ? 'bg-orange-50 ring-1 ring-orange-200' : 'hover:bg-orange-50'}`}
+                                            type="button"
+                                            onMouseEnter={() => setSelectedIndex(index)}
+                                        >
+                                            <div className="flex flex-col">
+                                                <span className={`font-bold transition-colors ${selectedIndex === index ? 'text-orange-600' : 'text-slate-800 group-hover:text-orange-600'}`}>
+                                                    {highlightMatch(s.name, query)}
+                                                </span>
+                                                <span className={`text-[10px] font-bold uppercase tracking-wider ${selectedIndex === index ? 'text-orange-400' : 'text-slate-400 group-hover:text-orange-400'}`}>
+                                                    {highlightMatch(s.code, query)}
+                                                </span>
+                                            </div>
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${selectedIndex === index ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-slate-50 border border-slate-100 text-slate-300 group-hover:bg-orange-100 group-hover:text-orange-600 group-hover:border-orange-200'}`}>
+                                                <MapPin size={14} />
+                                            </div>
+                                        </button>
+                                    );
+                                })
                             ) : (
                                 <div className="p-8 flex flex-col items-center justify-center text-slate-400">
                                     <span className="text-sm font-medium">No stations found</span>

@@ -36,15 +36,7 @@ struct TrainInfo {
     std::vector<ScheduleStop> schedule;
 };
 
-// ── Weighted directed edge in the adjacency list ─────────────────
-struct Edge {
-    int toStation;       // destination station id
-    int distanceKm;      // km between pair
-    int travelTimeMin;   // minutes of travel
-    int trainId;         // index into Graph::trains
-    int fromStopIdx;     // index in train's schedule
-    int toStopIdx;       // index in train's schedule
-};
+
 
 // ── The weighted directed graph ──────────────────────────────────
 class Graph {
@@ -60,7 +52,6 @@ public:
     int         stationCount() const { return (int)stations.size(); }
 
     // Accessors
-    const std::vector<Edge>&      edgesFrom(int stationId) const;
     const std::vector<Station>&   getStations() const { return stations; }
     const std::vector<TrainInfo>& getTrains()   const { return trains; }
     const TrainInfo&              getTrain(int id) const { return trains[id]; }
@@ -78,8 +69,6 @@ private:
     // Helper for loading train data
     void processTrainData(json& jData);
 
-    // Adjacency list: adj[stationId] = vector of outgoing edges
-    std::vector<std::vector<Edge>> adj;
 
     // Fast lookups
     std::unordered_map<std::string, int> codeToId;

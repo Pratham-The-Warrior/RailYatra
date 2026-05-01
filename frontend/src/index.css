@@ -113,3 +113,26 @@ textarea {
 .scrollbar-timeline::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ── Compact Route Card ── */
+.route-card-compact {
+  width: 100%;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(.22, 1, .36, 1),
+    box-shadow 0.3s cubic-bezier(.22, 1, .36, 1),
+    border-color 0.3s ease;
+  cursor: default;
+}
+
+.route-card-compact:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1),
+    0 4px 12px -4px rgba(37, 99, 235, 0.08);
+  border-color: #bfdbfe;
+}
