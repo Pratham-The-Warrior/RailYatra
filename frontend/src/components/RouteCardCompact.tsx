@@ -28,25 +28,25 @@ export const RouteCardCompact: React.FC<RouteCardCompactProps> = ({ route, index
             <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <div>
-                        <div className="text-xl font-extrabold tracking-tight text-slate-900 font-display leading-none">
+                        <div className="text-xl font-bold tracking-tight text-slate-900 leading-none">
                             {route.total_time_formatted}
                         </div>
-                        <div className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1 mt-1">
+                        <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 mt-1">
                             <Clock size={8} /> Duration
                         </div>
                     </div>
                     <div className="w-px h-7 bg-slate-200" />
                     <div>
-                        <div className="text-xl font-extrabold tracking-tight text-slate-900 font-display leading-none">
-                            {route.total_distance_km}<span className="text-xs ml-0.5 text-slate-400 font-bold">km</span>
+                        <div className="text-xl font-bold tracking-tight text-slate-900 leading-none">
+                            {route.total_distance_km}<span className="text-xs ml-0.5 text-slate-400 font-medium">km</span>
                         </div>
-                        <div className="text-[8px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1 mt-1">
+                        <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 mt-1">
                             <MapPin size={8} /> Distance
                         </div>
                     </div>
                 </div>
 
-                <div className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm shrink-0 ${route.switches === 0 ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-white'}`}>
+                <div className={`px-2 py-1 rounded-md text-[8px] font-bold uppercase tracking-widest flex items-center gap-1 shadow-sm shrink-0 ${route.switches === 0 ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-white'}`}>
                     {route.switches === 0 ? <GitCommit size={11} /> : <Layers size={11} />}
                     {route.switches === 0 ? 'Direct' : `${route.switches} Chg`}
                 </div>
@@ -75,9 +75,9 @@ export const RouteCardCompact: React.FC<RouteCardCompactProps> = ({ route, index
                         {/* Departure → Arrival */}
                         <div className="flex items-center gap-2 bg-slate-50/80 rounded-lg p-2.5 border border-slate-100">
                             <div className="min-w-0">
-                                <div className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Dep</div>
-                                <div className="text-[15px] font-black font-display text-slate-900 leading-tight mt-0.5">{leg.departure_time}</div>
-                                <div className="text-[9px] font-semibold text-slate-500 truncate leading-none mt-0.5">{leg.from_code}</div>
+                                <div className="text-[7px] font-bold text-slate-400 uppercase tracking-widest leading-none">Dep</div>
+                                <div className="text-[15px] font-bold text-slate-900 leading-tight mt-0.5">{leg.departure_time}</div>
+                                <div className="text-[9px] font-medium text-slate-500 truncate leading-none mt-0.5">{leg.from_code}</div>
                             </div>
 
                             <div className="flex-1 flex items-center justify-center px-1">
@@ -87,9 +87,9 @@ export const RouteCardCompact: React.FC<RouteCardCompactProps> = ({ route, index
                             </div>
 
                             <div className="min-w-0 text-right">
-                                <div className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Arr</div>
-                                <div className="text-[15px] font-black font-display text-slate-900 leading-tight mt-0.5">{leg.arrival_time}</div>
-                                <div className="text-[9px] font-semibold text-slate-500 truncate leading-none mt-0.5">{leg.to_code}</div>
+                                <div className="text-[7px] font-bold text-slate-400 uppercase tracking-widest leading-none">Arr</div>
+                                <div className="text-[15px] font-bold text-slate-900 leading-tight mt-0.5">{leg.arrival_time}</div>
+                                <div className="text-[9px] font-medium text-slate-500 truncate leading-none mt-0.5">{leg.to_code}</div>
                             </div>
                         </div>
 
@@ -118,8 +118,8 @@ export const RouteCardCompact: React.FC<RouteCardCompactProps> = ({ route, index
                                         <MapPin size={16} className="text-orange-600" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest leading-none">Change at</div>
-                                        <div className="text-sm font-extrabold text-slate-900 uppercase tracking-tight leading-tight mt-0.5">{leg.to_name || leg.to_code}</div>
+                                        <div className="text-[9px] font-bold text-orange-500 uppercase tracking-widest leading-none">Change at</div>
+                                        <div className="text-sm font-bold text-slate-900 uppercase tracking-tight leading-tight mt-0.5">{leg.to_name || leg.to_code}</div>
                                     </div>
                                     <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-lg border border-orange-200 shadow-sm shrink-0">
                                         <Clock size={12} className="text-orange-600" />

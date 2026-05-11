@@ -1,28 +1,29 @@
-# 🚄 RailYatra: Premium Pathfinding Engine
+# RailYatra
 
 **RailYatra** is a high-performance train route-finding platform. It features a custom-built C++ navigation engine capable of processing thousands of train schedules to find the most optimal multi-leg journeys across the Indian Railways network.
 
 ---
 
-- **Intelligent Station Search**: Fuzzy-matching autocomplete supporting keyboard accessibility and robust typo-tolerance.
-- **Premium Collections**: Dedicated high-end visual charts for special train categories like Vande Bharat, Tejas, and Gatiman.
-- **Modular Data System**: Easily add new train categories by simply adding JSON data files.
+- **Station Search**: Fuzzy-matching autocomplete with keyboard navigation and typo-tolerance.
+- **Train Collections**: Visual route charts for special train categories like Vande Bharat, Tejas, and Gatiman.
+- **Modular Data System**: Add new train categories by dropping in JSON data files.
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-- **Blazing Fast Engine**: Layered multi-pass Dijkstra written in C++17, finding the best 10 routes in under 10ms.
-- **Premium Route Charts**: Modular "Railway Chart" system for special train categories with sequential serial numbers and detailed timings.
-- **Multi-Criteria Optimization**: Sort routes by travel time, total distance, or minimum switches.
-- **Best 10 Routes**: Returns up to 10 diverse routes — direct trains first, then 1-transfer, then 2-transfer, ranked by total travel time within each tier.
-- **Intelligent Transfers**: Validates connecting times at junctions (minimum 30 min buffer, max wait limit configurable).
-- **Intelligent Station Search**: Built-in typo-tolerance (`fuse.js`) resolving query variations inside an interactive, keyboard-navigable UI dropdown with live match highlighting.
-- **Premium UI**: Modern "RailPath" aesthetic with glassmorphism, smooth animations, and a clean white theme.
+- **Fast C++ Engine**: Layered multi-pass Dijkstra written in C++17, finding routes in under 10ms.
+- **City-Level Routing**: Multi-source, multi-destination routing — search between entire cities (e.g., "Mumbai" to "Delhi"), all station combinations explored simultaneously.
+- **Route Charts**: Modular chart system for special train categories with serial numbers and detailed timings.
+- **Multi-Criteria Sort**: Sort routes by travel time, total distance, or minimum switches.
+- **Progressive Loading**: Fetches up to 50 routes in a single engine call, displayed 10 at a time with a "Load More" button.
+- **Transfer Validation**: Validates connecting times at junctions (minimum 30 min buffer, max wait limit configurable).
+- **Station Search**: Fuse.js-powered typo-tolerant autocomplete with keyboard navigation and live match highlighting.
+- **Modern UI**: React 19 frontend with glassmorphism, animations, and responsive design.
 
 ---
 
-## 🧠 The Dijkstra Logic (Technical Deep-Dive)
+## Dijkstra Logic
 
 The core navigation engine implements a **Layered Multi-Pass Dijkstra** optimized for scheduled transportation networks. See [`logic.md`](logic.md) for the full technical breakdown.
 
@@ -45,9 +46,9 @@ During expansion, every potential connection is validated for:
 
 ---
 
-## 🛠️ Project Architecture
+## Architecture
 
-RailYatra utilizes a **Hybrid Multi-Tier & Micro-Core Architecture** to guarantee extreme pathfinding throughput while maintaining a smooth user experience.
+The project uses a three-tier setup: a React frontend talks to an Express.js backend, which delegates pathfinding to a persistent C++ child process.
 
 ```mermaid
 flowchart TD
@@ -57,23 +58,23 @@ flowchart TD
     CE -->|Reads Data| DATA[(JSON Train Data)]
 ```
 
-### Architectural Pillars
-- **Micro-Core Engine**: To circumvent Node.js CPU bottlenecks, the mathematically heavy Layered Multi-Pass Dijkstra algorithm is offloaded to a persistent, compiled C++17 process (`route_engine.exe`). Logic is encapsulated in `src/services/engine.service.js`.
-- **Industrial Routing**: The app follows a strict **Controller-Service-Route** pattern.
-    - `src/api/routes/`: Defines the endpoints.
-    - `src/api/controllers/`: Handles the business logic and engine mediation.
-    - `src/services/`: Wraps background processes and external utilities.
-- **Asynchronous API Gateway**: A lightweight Express.js server (`src/app.js`) acts as an execution manager and HTTP bridge.
-- **"RailPath" Premium UI**: A bespoke frontend built on React 19.
+### Key Decisions
+- **C++ Engine**: The Dijkstra algorithm runs in a persistent, compiled C++17 process (`route_engine.exe`) to avoid Node.js CPU bottlenecks. Managed by `src/services/engine.service.js`.
+- **Controller-Service-Route pattern**:
+    - `src/api/routes/`: Endpoint definitions.
+    - `src/api/controllers/`: Business logic and engine mediation.
+    - `src/services/`: Background process wrappers.
+- **Express.js gateway**: Lightweight HTTP bridge in `src/app.js`.
+- **React 19 frontend**: Single-page app with Framer Motion animations.
 
-### Tech Stack Breakdown
+### Tech Stack
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
-- **Backend / Delivery Layer**: Node.js, Express.js.
-- **Navigation Engine**: Modern C++17, `nlohmann/json` macro-library for high-speed deterministic JSON serialization.
+- **Backend**: Node.js, Express.js.
+- **Engine**: C++17, `nlohmann/json` for JSON serialization.
 
 ---
 
-## ⚡ Setup & Installation
+## Setup & Installation
 
 ### 1. Build the Engine
 Requires `g++` (MinGW-w64) installed and in your PATH.
@@ -83,7 +84,7 @@ cd engine
 ```
 
 ### 2. Prepare Data
-Ensure `master_train_data.json` is present in the project root. This file contains the pre-processed schedules for all trains.
+Ensure `master_train_data.json` and `city_stations.json` are present in the project root. The `city_stations.json` enables city-level clustered searches.
 
 ### 3. Start the Backend
 ```bash
@@ -112,7 +113,8 @@ backend/
 │   └── app.js             # Express application & middleware setup
 ├── server.js              # Entry point
 ├── package.json
-└── stations.json
+├── stations.json
+├── city_stations.json     # Mapping of major cities to their constituent stations
 frontend/
 ├── src/                   # React components and custom hooks
 ├── public/                # Static assets
@@ -121,7 +123,7 @@ frontend/
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 ### `POST /api/route`
 Calculates routes between two stations.
@@ -133,13 +135,13 @@ Calculates routes between two stations.
 | `sort_by` | `String` | `time`, `distance`, or `switches` | `switches` |
 | `max_wait` | `Int` | Max wait time at transfers (minutes) | `600` (10h) |
 | `max_switches`| `Int` | Max number of transfers allowed | `5` |
-| `top_k` | `Int` | Number of results to return | `10` |
+| `top_k` | `Int` | Number of results to return | `50` |
 
 ### `GET /api/stations`
-Fuzzy-autocomplete endpoint for station search powered by Fuse.js. Returns top 10 matches ranked by Levenshtein distance relevance (intelligently handling minor spelling variations like "dehli").
+Fuzzy-autocomplete endpoint for station search (Fuse.js). Returns top 10 matches ranked by relevance.
 
 ### `GET /api/category/:category`
-Fetches a list of trains for a specific collection (e.g., `vandebharat`, `tejas`). Returns premium route chart data.
+Fetches trains for a specific collection (e.g., `vandebharat`, `tejas`). Returns route chart data.
 
 ### `GET /api/schedule/:trainNumber`
 Fetches the full schedule for a specific train. Returns station stops, arrival/departure times, and operating days.
@@ -149,7 +151,7 @@ Serves the PDF timetable for the requested train (if available).
 
 ---
 
-## 🧪 Verification & Reliability
+## Testing & Benchmarks
 The system includes a verification suite in `/tests`:
 - **Correctness**: Validates that found routes actually exist in the raw JSON schedules.
 - **Performance**: Measures engine latency (target: <10ms per search).

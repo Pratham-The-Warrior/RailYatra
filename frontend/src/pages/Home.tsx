@@ -5,7 +5,7 @@ import { SearchForm } from "@/components/SearchForm";
 import { RouteCard } from "@/components/RouteCard";
 import { RouteCardCompact } from "@/components/RouteCardCompact";
 import { LayoutToggle, ViewLayout } from "@/components/LayoutToggle";
-import { Calendar, History, ArrowRight, Star, Activity } from "lucide-react";
+import { Calendar, History, ArrowRight, Star, Activity, ChevronDown, CheckCircle2 } from "lucide-react";
 
 const STORAGE_KEY = 'railyatra_recent_searches';
 
@@ -32,6 +32,9 @@ export function Home({ onNavigate }: HomeProps) {
     const [searched, setSearched] = useState(false);
     const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
     const [viewLayout, setViewLayout] = useState<ViewLayout>('list');
+    const [visibleCount, setVisibleCount] = useState(15);
+
+    const LOAD_MORE_STEP = 15;
 
     // Load recent searches from localStorage on mount
     useEffect(() => {
@@ -61,6 +64,7 @@ export function Home({ onNavigate }: HomeProps) {
         setSearched(false);
         setLoading(true);
         setError(null);
+        setVisibleCount(15);
 
         try {
             let response: Response;
@@ -192,7 +196,7 @@ export function Home({ onNavigate }: HomeProps) {
                                 <div
                                     key={idx}
                                     onClick={() => handleSearch(
-                                        { from: r.from, to: r.to, date: r.date, max_switches: 4, max_wait: 600, sort_by: 'switches', top_k: 10 },
+                                        { from: r.from, to: r.to, date: r.date, max_switches: 4, max_wait: 600, sort_by: 'switches', top_k: 50 },
                                         r.fromDisplay,
                                         r.toDisplay
                                     )}
@@ -278,11 +282,11 @@ export function Home({ onNavigate }: HomeProps) {
                 )}
 
                 {routes.length > 0 && (
-                    <div className="mt-16 md:mt-24 space-y-8 md:space-y-12">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 min-w-0">
-                                <h2 className="text-2xl md:text-4xl font-black text-slate-900 font-display shrink-0">Top {routes.length} Optimal Routes</h2>
-                                <div className="flex-1 h-px bg-slate-100 hidden sm:block" />
+                    <div className="mt-16 md:mt-24 space-y-4 md:space-y-5">
+                        <div className="flex items-center justify-between gap-6 pb-6 border-b border-slate-100">
+                            <div>
+                                <p className="text-orange-500 text-ls font-semibold tracking-widest uppercase mb-1">Search Results</p>
+                                <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Optimal Routes</h2>
                             </div>
                             {/* Toggle only visible on desktop */}
                             <div className="hidden lg:block shrink-0">
@@ -292,12 +296,12 @@ export function Home({ onNavigate }: HomeProps) {
 
                         {/* Mobile: always list view */}
                         <div className="lg:hidden grid gap-8">
-                            {routes.map((route, idx) => (
+                            {routes.slice(0, visibleCount).map((route, idx) => (
                                 <motion.div
                                     key={idx}
                                     initial={{ opacity: 0, y: 16 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4, delay: idx * 0.1 }}
+                                    transition={{ duration: 0.4, delay: Math.min(idx, 9) * 0.1 }}
                                 >
                                     <RouteCard route={route} index={idx} />
                                 </motion.div>
@@ -316,12 +320,12 @@ export function Home({ onNavigate }: HomeProps) {
                                         transition={{ duration: 0.25 }}
                                         className="grid gap-12"
                                     >
-                                        {routes.map((route, idx) => (
+                                        {routes.slice(0, visibleCount).map((route, idx) => (
                                             <motion.div
                                                 key={idx}
                                                 initial={{ opacity: 0, y: 16 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.4, delay: idx * 0.1 }}
+                                                transition={{ duration: 0.4, delay: Math.min(idx, 9) * 0.1 }}
                                             >
                                                 <RouteCard route={route} index={idx} />
                                             </motion.div>
@@ -336,12 +340,12 @@ export function Home({ onNavigate }: HomeProps) {
                                         transition={{ duration: 0.25 }}
                                         className="grid grid-cols-3 gap-6"
                                     >
-                                        {routes.map((route, idx) => (
+                                        {routes.slice(0, visibleCount).map((route, idx) => (
                                             <motion.div
                                                 key={idx}
                                                 initial={{ opacity: 0, scale: 0.95 }}
                                                 animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ duration: 0.3, delay: idx * 0.06 }}
+                                                transition={{ duration: 0.3, delay: Math.min(idx, 9) * 0.06 }}
                                             >
                                                 <RouteCardCompact route={route} index={idx} />
                                             </motion.div>
@@ -349,6 +353,32 @@ export function Home({ onNavigate }: HomeProps) {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+                        </div>
+
+                        {/* Load More / All Displayed */}
+                        <div className="flex justify-center pt-6 pb-10">
+                            {visibleCount < routes.length ? (
+                                <motion.button
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: [.22, 1, .36, 1] }}
+                                    onClick={() => setVisibleCount(prev => Math.min(prev + LOAD_MORE_STEP, routes.length))}
+                                    className="group relative inline-flex items-center gap-2 px-10 py-4 bg-slate-900 text-white font-semibold rounded-2xl shadow-lg shadow-slate-900/20 hover:shadow-xl hover:shadow-slate-900/30 hover:bg-slate-800 transition-all duration-300 active:scale-[0.97]"
+                                >
+                                    <span>Load More Routes</span>
+                                    <ChevronDown size={16} className="group-hover:translate-y-0.5 transition-transform duration-200" />
+                                </motion.button>
+                            ) : (
+                                <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="inline-flex items-center gap-2 text-sm text-slate-400 font-medium"
+                                >
+                                    <CheckCircle2 size={16} className="text-emerald-400" />
+                                    All {routes.length} routes displayed
+                                </motion.p>
+                            )}
                         </div>
                     </div>
                 )}

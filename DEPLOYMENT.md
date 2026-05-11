@@ -1,4 +1,4 @@
-# 🚀 RailYatra Deployment Guide
+# RailYatra Deployment Guide
 
 This guide explains how to deploy the RailYatra engine, backend, and frontend.
 
