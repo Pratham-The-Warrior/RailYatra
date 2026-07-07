@@ -1,9 +1,9 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Calendar, FileText, ArrowRight,
     Wifi, UtensilsCrossed, Plug, Cross, Activity, HelpCircle,
-    Clock, MapPin
+    Clock, MapPin, LayoutList, LayoutGrid
 } from 'lucide-react';
 import { TrainSchedule, ScheduleItem } from '../../pages/Schedules'; // Assume types are in types.ts or exported from Schedules.tsx
 import { titleCase, computeHalt } from '../../pages/Schedules';
@@ -21,6 +21,7 @@ interface SchedulesResultProps {
 export const SchedulesResult: React.FC<SchedulesResultProps> = ({
     schedule, trainNumber, setTrainNumber, handleSubmit, handleBack, resultsRef
 }) => {
+    const [mobileView, setMobileView] = useState<'list' | 'cards'>('list');
     const isDailyService = schedule?.operating_days ? Object.values(schedule.operating_days).every(Boolean) : false;
     const src = schedule?.schedule?.[0];
     const dest = schedule?.schedule?.[schedule.schedule.length - 1];
@@ -110,18 +111,183 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                     <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 md:gap-5 items-start">
                         {/* ── TIMETABLE ── */}
                         <div className="bg-white rounded-xl md:rounded-2xl border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-900 font-display">Detailed Timetable</h2>
-                                <span className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Effective Feb 2026</span>
+                            <div className="flex items-center justify-between px-4 md:px-6 py-3.5 md:py-4 border-b border-slate-100">
+                                <h2 className="text-base md:text-lg font-bold text-slate-900 font-display">Detailed Timetable</h2>
+                                <div className="flex items-center gap-3">
+                                    {/* Mobile view toggle */}
+                                    <div className="sm:hidden relative flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                                        <motion.div
+                                            className="absolute top-0.5 bottom-0.5 rounded-md bg-white shadow-sm border border-slate-200"
+                                            initial={false}
+                                            animate={{
+                                                left: mobileView === 'list' ? '2px' : '50%',
+                                                width: 'calc(50% - 3px)',
+                                            }}
+                                            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                                        />
+                                        <button
+                                            onClick={() => setMobileView('list')}
+                                            className={`relative z-10 flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-colors ${
+                                                mobileView === 'list' ? 'text-slate-900' : 'text-slate-400'
+                                            }`}
+                                            aria-label="List view"
+                                        >
+                                            <LayoutList size={13} />
+                                        </button>
+                                        <button
+                                            onClick={() => setMobileView('cards')}
+                                            className={`relative z-10 flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-colors ${
+                                                mobileView === 'cards' ? 'text-slate-900' : 'text-slate-400'
+                                            }`}
+                                            aria-label="Card view"
+                                        >
+                                            <LayoutGrid size={13} />
+                                        </button>
+                                    </div>
+                                    <span className="hidden md:inline text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Effective Feb 2026</span>
+                                </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <div className="min-w-full sm:min-w-[540px]">
-                                    <div className="grid grid-cols-[1fr_100px] sm:grid-cols-[1fr_140px_72px_72px_64px] px-4 md:px-6 py-2.5 md:py-3 border-b border-slate-100 bg-slate-50/50">
+
+                            {/* ── Mobile Card View ── */}
+                            <div className="sm:hidden">
+                                <AnimatePresence mode="wait">
+                                    {mobileView === 'cards' ? (
+                                        <motion.div
+                                            key="mobile-cards"
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -8 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="grid grid-cols-2 gap-2 p-3"
+                                        >
+                                            {schedule!.schedule.map((stop: ScheduleItem, idx: number) => {
+                                                const isFirst = idx === 0;
+                                                const isLast = idx === schedule!.schedule.length - 1;
+                                                const halt = computeHalt(stop.arrival_time, stop.departure_time);
+
+                                                let borderAccent = 'border-l-slate-200';
+                                                if (isFirst) borderAccent = 'border-l-emerald-400';
+                                                if (isLast) borderAccent = 'border-l-orange-400';
+
+                                                return (
+                                                    <motion.div
+                                                        key={stop.sequence_number || idx}
+                                                        initial={{ opacity: 0, scale: 0.95 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ duration: 0.25, delay: Math.min(idx, 15) * 0.03 }}
+                                                        className={`relative bg-slate-50/80 rounded-lg border border-slate-100 border-l-[3px] ${borderAccent} p-2.5 hover:bg-white hover:shadow-sm transition-all`}
+                                                    >
+                                                        {/* Station name + code */}
+                                                        <div className="flex items-start justify-between gap-1 mb-1.5">
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="text-[11px] font-bold text-slate-800 leading-tight truncate">
+                                                                    {titleCase(stop.station_name)}
+                                                                </p>
+                                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                                                    {stop.station_code}
+                                                                </p>
+                                                            </div>
+                                                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500 leading-none shrink-0">
+                                                                D{stop.day_of_journey}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Times row */}
+                                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                                            <div className="flex-1 text-center">
+                                                                <p className="text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Arr</p>
+                                                                <p className="text-[11px] font-bold text-slate-700 leading-none">
+                                                                    {isFirst ? '—' : (stop.arrival_time ?? '--')}
+                                                                </p>
+                                                            </div>
+                                                            <div className="w-3 flex items-center justify-center">
+                                                                <ArrowRight className="w-2.5 h-2.5 text-slate-300" />
+                                                            </div>
+                                                            <div className="flex-1 text-center">
+                                                                <p className="text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Dep</p>
+                                                                <p className="text-[11px] font-bold text-slate-700 leading-none">
+                                                                    {isLast ? '—' : (stop.departure_time ?? '--')}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Halt + Distance footer */}
+                                                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100/80">
+                                                            <span className="text-[9px] font-medium text-slate-400">
+                                                                {halt === '--' ? 'Origin/End' : `⏱ ${halt}`}
+                                                            </span>
+                                                            <span className="text-[9px] font-medium text-slate-400">
+                                                                {Math.round(stop.distance_km)} km
+                                                            </span>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="mobile-list"
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -8 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            {/* Existing mobile list header */}
+                                            <div className="grid grid-cols-[1fr_100px] px-4 py-2.5 border-b border-slate-100 bg-slate-50/50">
+                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Station</span>
+                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Arrive/Depart</span>
+                                            </div>
+                                            <div className="divide-y divide-slate-50">
+                                                {schedule!.schedule.map((stop: ScheduleItem, idx: number) => {
+                                                    const isFirst = idx === 0;
+                                                    const isLast = idx === schedule!.schedule.length - 1;
+                                                    const halt = computeHalt(stop.arrival_time, stop.departure_time);
+
+                                                    let dotBg = 'bg-slate-300';
+                                                    if (isFirst || isLast) dotBg = 'bg-emerald-500';
+
+                                                    let ad = `${stop.arrival_time ?? '--'} / ${stop.departure_time ?? '--'}`;
+                                                    if (isFirst) ad = `Starts / ${stop.departure_time ?? '--'}`;
+                                                    if (isLast) ad = `${stop.arrival_time ?? '--'} / Ends`;
+
+                                                    return (
+                                                        <div key={stop.sequence_number || idx}
+                                                            className="grid grid-cols-[1fr_100px] items-center px-4 py-3 transition-colors hover:bg-slate-50/60">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <span className={`w-[8px] h-[8px] rounded-full ${dotBg} shrink-0`} />
+                                                                <div className="min-w-0">
+                                                                    <p className="text-xs font-semibold leading-tight truncate text-slate-800">{titleCase(stop.station_name)}</p>
+                                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{stop.station_code}</p>
+                                                                        <span className="text-[10px] text-slate-300">•</span>
+                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Day {stop.day_of_journey}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col min-w-0">
+                                                                <span className="text-xs font-medium text-slate-600 truncate">{ad.replace('Starts / ', '').replace(' / Ends', '')}</span>
+                                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                                    <span className="text-[10px] text-slate-400">{halt === '--' ? 'No halt' : `Halt ${halt}`}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* ── Desktop Table View (unchanged) ── */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <div className="min-w-[540px]">
+                                    <div className="grid grid-cols-[1fr_140px_72px_72px_64px] px-6 py-3 border-b border-slate-100 bg-slate-50/50">
                                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Station</span>
                                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Arrive/Depart</span>
-                                        <span className="hidden sm:inline-block text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Halt</span>
-                                        <span className="hidden sm:inline-block text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Dist.</span>
-                                        <span className="hidden sm:inline-block text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Day</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Halt</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Dist.</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Day</span>
                                     </div>
                                     <div className="divide-y divide-slate-50">
                                         {schedule!.schedule.map((stop: ScheduleItem, idx: number) => {
@@ -138,27 +304,18 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
 
                                             return (
                                                 <div key={stop.sequence_number || idx}
-                                                    className="grid grid-cols-[1fr_100px] sm:grid-cols-[1fr_140px_72px_72px_64px] items-center px-4 md:px-6 py-3 md:py-4 transition-colors hover:bg-slate-50/60">
-                                                    <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                                                        <span className={`w-[8px] h-[8px] sm:w-[9px] sm:h-[9px] rounded-full ${dotBg} shrink-0`} />
+                                                    className="grid grid-cols-[1fr_140px_72px_72px_64px] items-center px-6 py-4 transition-colors hover:bg-slate-50/60">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <span className={`w-[9px] h-[9px] rounded-full ${dotBg} shrink-0`} />
                                                         <div className="min-w-0">
-                                                            <p className="text-xs sm:text-sm font-semibold leading-tight truncate text-slate-800">{titleCase(stop.station_name)}</p>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{stop.station_code}</p>
-                                                                <span className="sm:hidden text-[10px] text-slate-300">•</span>
-                                                                <span className="sm:hidden text-[10px] font-bold text-slate-400 uppercase">Day {stop.day_of_journey}</span>
-                                                            </div>
+                                                            <p className="text-sm font-semibold leading-tight truncate text-slate-800">{titleCase(stop.station_name)}</p>
+                                                            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-[0.06em] mt-0.5">{stop.station_code}</p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-col sm:block min-w-0">
-                                                        <span className="text-xs sm:text-sm font-medium text-slate-600 truncate">{ad.replace('Starts / ', '').replace(' / Ends', '')}</span>
-                                                        <div className="sm:hidden flex items-center gap-1.5 mt-0.5">
-                                                            <span className="text-[10px] text-slate-400">{halt === '--' ? 'No halt' : `Halt ${halt}`}</span>
-                                                        </div>
-                                                    </div>
-                                                    <span className="hidden sm:inline-block text-xs md:text-sm font-medium text-center text-slate-500">{halt}</span>
-                                                    <span className="hidden sm:inline-block text-xs md:text-sm font-medium text-center text-slate-500">{Math.round(stop.distance_km)} km</span>
-                                                    <div className="hidden sm:flex justify-center">
+                                                    <span className="text-sm font-medium text-slate-600 truncate">{ad}</span>
+                                                    <span className="text-sm font-medium text-center text-slate-500">{halt}</span>
+                                                    <span className="text-sm font-medium text-center text-slate-500">{Math.round(stop.distance_km)} km</span>
+                                                    <div className="flex justify-center">
                                                         <span className="text-[11px] font-bold px-2 py-[3px] rounded leading-none border border-slate-200 text-slate-600">
                                                             Day {stop.day_of_journey}
                                                         </span>

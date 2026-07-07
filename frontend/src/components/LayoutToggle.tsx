@@ -31,7 +31,7 @@ export const LayoutToggle: React.FC<LayoutToggleProps> = ({ layout, onToggle }) 
                 id="layout-toggle-list"
             >
                 <LayoutList size={14} />
-                <span className="hidden sm:inline">List</span>
+                <span>List</span>
             </button>
 
             <button
@@ -42,7 +42,7 @@ export const LayoutToggle: React.FC<LayoutToggleProps> = ({ layout, onToggle }) 
                 id="layout-toggle-carousel"
             >
                 <LayoutGrid size={14} />
-                <span className="hidden sm:inline">Cards</span>
+                <span>Cards</span>
             </button>
         </div>
     );

@@ -135,4 +135,18 @@ textarea {
   box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1),
     0 4px 12px -4px rgba(37, 99, 235, 0.08);
   border-color: #bfdbfe;
+}
+
+/* Mobile: remove min-height, soften hover */
+@media (max-width: 639px) {
+  .route-card-compact {
+    min-height: auto;
+  }
+  .route-card-compact:hover {
+    transform: none;
+  }
+  .route-card-compact:active {
+    transform: scale(0.98);
+    border-color: #bfdbfe;
+  }
 }

@@ -9,6 +9,7 @@ interface RouteCardProps {
 }
 
 export const RouteCard: React.FC<RouteCardProps> = ({ route, index }) => {
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.98 }}

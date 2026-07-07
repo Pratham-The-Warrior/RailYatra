@@ -4,6 +4,7 @@ import { Route, SearchParams } from "@/types";
 import { SearchForm } from "@/components/SearchForm";
 import { RouteCard } from "@/components/RouteCard";
 import { RouteCardCompact } from "@/components/RouteCardCompact";
+import { RouteCardMobile } from "@/components/RouteCardMobile";
 import { LayoutToggle, ViewLayout } from "@/components/LayoutToggle";
 import { Calendar, History, ArrowRight, Star, Activity, ChevronDown, CheckCircle2 } from "lucide-react";
 
@@ -283,63 +284,62 @@ export function Home({ onNavigate }: HomeProps) {
 
                 {routes.length > 0 && (
                     <div className="mt-16 md:mt-24 space-y-4 md:space-y-5">
-                        <div className="flex items-center justify-between gap-6 pb-6 border-b border-slate-100">
+                        <div className="flex items-center justify-between gap-4 md:gap-6 pb-4 md:pb-6 border-b border-slate-100">
                             <div>
-                                <p className="text-orange-500 text-ls font-semibold tracking-widest uppercase mb-1">Search Results</p>
-                                <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Optimal Routes</h2>
+                                <p className="text-orange-500 text-xs md:text-base font-semibold tracking-widest uppercase mb-1">Search Results</p>
+                                <h2 className="text-2xl md:text-4xl font-bold text-slate-900">Optimal Routes</h2>
                             </div>
-                            {/* Toggle only visible on desktop */}
-                            <div className="hidden lg:block shrink-0">
+                            {/* Toggle visible on all screens */}
+                            <div className="shrink-0">
                                 <LayoutToggle layout={viewLayout} onToggle={setViewLayout} />
                             </div>
                         </div>
 
-                        {/* Mobile: always list view */}
-                        <div className="lg:hidden grid gap-8">
-                            {routes.slice(0, visibleCount).map((route, idx) => (
+                        {/* Unified togglable list/cards for all screens */}
+                        <AnimatePresence mode="wait">
+                            {viewLayout === 'list' ? (
                                 <motion.div
-                                    key={idx}
-                                    initial={{ opacity: 0, y: 16 }}
+                                    key="list"
+                                    initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.4, delay: Math.min(idx, 9) * 0.1 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.25 }}
+                                    className="grid gap-8 lg:gap-12"
                                 >
-                                    <RouteCard route={route} index={idx} />
+                                    {routes.slice(0, visibleCount).map((route, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            initial={{ opacity: 0, y: 16 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.4, delay: Math.min(idx, 9) * 0.1 }}
+                                        >
+                                            <RouteCard route={route} index={idx} />
+                                        </motion.div>
+                                    ))}
                                 </motion.div>
-                            ))}
-                        </div>
-
-                        {/* Desktop: togglable list/cards */}
-                        <div className="hidden lg:block">
-                            <AnimatePresence mode="wait">
-                                {viewLayout === 'list' ? (
-                                    <motion.div
-                                        key="list"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        transition={{ duration: 0.25 }}
-                                        className="grid gap-12"
-                                    >
+                            ) : (
+                                <motion.div
+                                    key="cards-grid"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.25 }}
+                                >
+                                    {/* Mobile: compact mobile-optimized cards */}
+                                    <div className="sm:hidden grid grid-cols-2 gap-2.5">
                                         {routes.slice(0, visibleCount).map((route, idx) => (
                                             <motion.div
                                                 key={idx}
-                                                initial={{ opacity: 0, y: 16 }}
+                                                initial={{ opacity: 0, y: 8 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.4, delay: Math.min(idx, 9) * 0.1 }}
+                                                transition={{ duration: 0.25, delay: Math.min(idx, 12) * 0.04 }}
                                             >
-                                                <RouteCard route={route} index={idx} />
+                                                <RouteCardMobile route={route} index={idx} />
                                             </motion.div>
                                         ))}
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="cards-grid"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        transition={{ duration: 0.25 }}
-                                        className="grid grid-cols-3 gap-6"
-                                    >
+                                    </div>
+                                    {/* Tablet+Desktop: original compact cards */}
+                                    <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                                         {routes.slice(0, visibleCount).map((route, idx) => (
                                             <motion.div
                                                 key={idx}
@@ -350,10 +350,10 @@ export function Home({ onNavigate }: HomeProps) {
                                                 <RouteCardCompact route={route} index={idx} />
                                             </motion.div>
                                         ))}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {/* Load More / All Displayed */}
                         <div className="flex justify-center pt-6 pb-10">
