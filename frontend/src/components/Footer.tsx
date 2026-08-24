@@ -65,11 +65,75 @@ export const Footer: React.FC = () => {
                 {/* Bottom bar */}
                 <div className="mt-14 md:mt-16 pt-6 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-500">
                     <p>© 2026 RailYatra. All Rights Reserved.</p>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                        <span>All systems operational</span>
-                    </div>
+
+                    {/* Premium "Made by" badge */}
+                    <a
+                        href="https://www.linkedin.com/in/pratham-sarda-8a6a88318/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative"
+                    >
+                        {/* Animated gradient border */}
+                        <span
+                            className="absolute -inset-[1px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[1px]"
+                            style={{
+                                background: 'conic-gradient(from var(--border-angle, 0deg), #f97316, #fb923c, #0A66C2, #38bdf8, #f97316)',
+                                animation: 'border-spin 3s linear infinite',
+                            }}
+                        />
+                        {/* Inner container */}
+                        <span className="relative flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-900 border border-slate-700/60 group-hover:border-transparent transition-all duration-500">
+                            {/* "Developed by" text */}
+                            <span className="text-[11px] tracking-wide text-slate-500 group-hover:text-slate-400 transition-colors duration-300 uppercase">
+                                Developed by
+                            </span>
+                            {/* Name with shimmer */}
+                            <span className="relative font-bold text-[13px] tracking-tight">
+                                <span
+                                    className="bg-clip-text text-transparent"
+                                    style={{
+                                        backgroundImage: 'linear-gradient(90deg, #f97316, #fb923c, #fff, #fb923c, #f97316)',
+                                        backgroundSize: '200% 100%',
+                                        animation: 'shimmer 3s ease-in-out infinite',
+                                    }}
+                                >
+                                    Pratham&nbsp; Sarda
+                                </span>
+                            </span>
+                            {/* Divider */}
+                            <span className="w-px h-3.5 bg-slate-700 group-hover:bg-slate-600 transition-colors duration-300" />
+                            {/* LinkedIn icon */}
+                            <span className="flex items-center justify-center w-5 h-5 rounded-md bg-slate-800 group-hover:bg-[#0A66C2] transition-all duration-300 group-hover:shadow-[0_0_12px_rgba(10,102,194,0.4)]">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    className="w-3 h-3 text-slate-500 group-hover:text-white transition-colors duration-300"
+                                >
+                                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                                </svg>
+                            </span>
+                        </span>
+                    </a>
+
+                    <span className="text-slate-600">v1.0 · RailYatra</span>
                 </div>
+
+                {/* Keyframe animations for the credit badge */}
+                <style>{`
+                    @property --border-angle {
+                        syntax: '<angle>';
+                        initial-value: 0deg;
+                        inherits: false;
+                    }
+                    @keyframes border-spin {
+                        to { --border-angle: 360deg; }
+                    }
+                    @keyframes shimmer {
+                        0%, 100% { background-position: -100% 0; }
+                        50% { background-position: 200% 0; }
+                    }
+                `}</style>
             </div>
         </footer>
     );

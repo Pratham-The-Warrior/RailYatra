@@ -5,7 +5,7 @@ $output = "route_engine.exe"
 
 Write-Host "Compiling RailYatra Engine..." -ForegroundColor Cyan
 
-g++ -O2 -std=c++17 main.cpp graph.cpp dijkstra.cpp -o $output
+g++ -O2 -std=c++17 -static main.cpp graph.cpp dijkstra.cpp -o $output
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Build Successful! Output: $output" -ForegroundColor Green
