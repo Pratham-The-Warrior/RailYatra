@@ -18,6 +18,14 @@ function readInt(env, name, dflt, { min, max }) {
     return n;
 }
 
+function readBool(env, name, dflt) {
+    const raw = env[name];
+    if (raw === undefined || raw === '') return dflt;
+    if (raw === '1' || raw === 'true') return true;
+    if (raw === '0' || raw === 'false') return false;
+    throw new Error(`Invalid ${name}=${JSON.stringify(raw)}: expected 1/0 or true/false`);
+}
+
 function loadConfig(env = process.env) {
     const isWindows = process.platform === 'win32';
     // __dirname is backend/src/platform -> project root is three levels up.
@@ -53,6 +61,22 @@ function loadConfig(env = process.env) {
         // alone could let the route cache reach gigabytes.
         routeCacheMaxMb: readInt(env, 'ROUTE_CACHE_MAX_MB', 256, { min: 1, max: 65536 }),
         smallCacheMaxMb: readInt(env, 'SMALL_CACHE_MAX_MB', 32, { min: 1, max: 65536 }),
+
+        // Proxies in front of the app whose X-Forwarded-For entries are trusted
+        // for the client IP: 1 = Railway's edge only; 2 = Cloudflare + Railway.
+        trustProxy: readInt(env, 'TRUST_PROXY', 1, { min: 0, max: 10 }),
+
+        // Per-client rate limits (per instance). Generous by default: many
+        // mobile users share one carrier IP. The engine limit applies only to
+        // cache misses, so popular searches are never throttled.
+        rateLimit: {
+            enabled: readBool(env, 'RATE_LIMIT_ENABLED', true),
+            ratePerSec: readInt(env, 'RATE_LIMIT_RPS', 50, { min: 1, max: 1000000 }),
+            burst: readInt(env, 'RATE_LIMIT_BURST', 200, { min: 1, max: 1000000 }),
+            engineRatePerSec: readInt(env, 'ENGINE_RATE_LIMIT_RPS', 5, { min: 1, max: 1000000 }),
+            engineBurst: readInt(env, 'ENGINE_RATE_LIMIT_BURST', 30, { min: 1, max: 1000000 }),
+            maxClients: readInt(env, 'RATE_LIMIT_MAX_CLIENTS', 100000, { min: 100, max: 10000000 })
+        },
 
         // Request limits (protect the engine from pathological inputs)
         limits: {

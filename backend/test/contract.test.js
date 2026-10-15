@@ -41,7 +41,7 @@ const CASES = [
     ['GET', '/api/health', '/api/health', 200],
 ];
 
-const container = createContainer({ env: { ...process.env, ENGINE_POOL_SIZE: '1' } });
+const container = createContainer({ env: { ...process.env, RATE_LIMIT_ENABLED: '0', ENGINE_POOL_SIZE: '1' } });
 let server, base;
 
 before(async () => {

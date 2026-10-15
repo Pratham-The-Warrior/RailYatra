@@ -8,7 +8,7 @@ const { resolveStationCodes } = require('./stationResolver');
  * (GET /api/route/pareto). Results are cached by weekday: the engine reads
  * only the day of week from the date, so this is exact.
  */
-function createRouter({ config, routing, caches, referenceData }) {
+function createRouter({ config, routing, caches, referenceData, engineGate }) {
     const router = express.Router();
     const routeCache = caches.create({
         name: 'route',
@@ -44,7 +44,10 @@ function createRouter({ config, routing, caches, referenceData }) {
      * Runs an engine request through the cache and writes the response.
      * Deterministic engine input errors are cached too (as { __error }).
      */
-    async function respondCached(res, cacheKey, payload) {
+    async function respondCached(req, res, cacheKey, payload) {
+        // Only cache misses cost engine time, so only they count against the
+        // per-client engine limit; popular (cached) searches are never throttled.
+        if (routeCache.get(cacheKey) === undefined && !engineGate(req, res)) return;
         try {
             const results = await routeCache.getOrCompute(cacheKey, async () => {
                 const r = await routing.request(payload);
@@ -78,7 +81,7 @@ function createRouter({ config, routing, caches, referenceData }) {
         };
         const cacheKey = JSON.stringify([payload.type, payload.from, payload.to, q.weekday,
             payload.max_switches, payload.max_wait, payload.sort_by, payload.top_k]);
-        return respondCached(res, cacheKey, payload);
+        return respondCached(req, res, cacheKey, payload);
     }
 
     async function paretoRoute(req, res) {
@@ -92,7 +95,7 @@ function createRouter({ config, routing, caches, referenceData }) {
             max_wait: q.maxWait
         };
         const cacheKey = JSON.stringify(['pareto', q.fromCodes, q.toCodes, q.weekday, q.maxSwitches, q.maxWait]);
-        return respondCached(res, cacheKey, payload);
+        return respondCached(req, res, cacheKey, payload);
     }
 
     router.get('/pareto', paretoRoute);

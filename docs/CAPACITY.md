@@ -115,7 +115,7 @@ The manual steps below describe what it does.
 ## Reproducing the single-instance numbers
 
 ```bash
-cd backend && PORT=3300 ENGINE_POOL_SIZE=2 taskset -c 0-1 node server.js &
+cd backend && RATE_LIMIT_ENABLED=0 PORT=3300 ENGINE_POOL_SIZE=2 taskset -c 0-1 node server.js &
 cd ../loadtest && taskset -c 2-3 node run.js mixed --url http://localhost:3300 --connections 64 --duration 20
 taskset -c 2-3 node run.js mixed --url http://localhost:3300 --connections 10000 --rate 1500 --duration 60
 curl -s localhost:3300/metrics | grep http_request_ms_bucket   # server-side latency

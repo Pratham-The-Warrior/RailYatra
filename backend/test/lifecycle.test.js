@@ -30,7 +30,7 @@ for (const f of ['stations.json', 'city_stations.json', 'master_train_data_vande
     fs.copyFileSync(path.join(ROOT, f), path.join(refDir, f));
 }
 
-const container = createContainer({ env: { ...process.env, ENGINE_POOL_SIZE: '1', REFERENCE_DATA_DIR: refDir } });
+const container = createContainer({ env: { ...process.env, RATE_LIMIT_ENABLED: '0', ENGINE_POOL_SIZE: '1', REFERENCE_DATA_DIR: refDir } });
 let server, base;
 
 before(async () => {
@@ -91,7 +91,7 @@ test('an engine crash followed by a reload leaves no orphaned engine process', a
 });
 
 test('shutdown during a reload stops the engines that were still starting', async () => {
-    const c = createContainer({ env: { ...process.env, ENGINE_POOL_SIZE: '1', REFERENCE_DATA_DIR: refDir } });
+    const c = createContainer({ env: { ...process.env, RATE_LIMIT_ENABLED: '0', ENGINE_POOL_SIZE: '1', REFERENCE_DATA_DIR: refDir } });
     c.start();
     assert.ok(await waitFor(() => c.routing.isReady()));
     const reload = c.reloadData();
@@ -139,7 +139,7 @@ test('a new module plugs in without touching existing code, and errors are handl
         }
     };
     // A separate container: each app instance owns its caches (names are unique per registry).
-    const c = createContainer({ env: { ...process.env, ENGINE_POOL_SIZE: '1', REFERENCE_DATA_DIR: refDir } });
+    const c = createContainer({ env: { ...process.env, RATE_LIMIT_ENABLED: '0', ENGINE_POOL_SIZE: '1', REFERENCE_DATA_DIR: refDir } });
     c.start();
     const s = createApp(c, { featureModules: [...modules, extra] }).listen(0);
     const url = `http://127.0.0.1:${s.address().port}`;
