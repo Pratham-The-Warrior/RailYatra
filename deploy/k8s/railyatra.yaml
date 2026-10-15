@@ -40,6 +40,8 @@ spec:
             - { name: ROUTE_CACHE_MAX_MB, value: "256" }
             - { name: SMALL_CACHE_MAX_MB, value: "32" }
             - { name: LOG_FORMAT, value: "json" }
+            # Proxy hops in front of the pod: 1 = ingress only; 2 = CDN + ingress.
+            - { name: TRUST_PROXY, value: "1" }
           resources:
             requests: { cpu: "2", memory: "512Mi" }
             limits:   { cpu: "2", memory: "768Mi" }

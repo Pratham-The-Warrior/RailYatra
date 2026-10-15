@@ -10,7 +10,7 @@ const { createApp } = require('../src/app');
 const { weekdayOf } = require('../src/platform/validation');
 const { resolveStationCodes } = require('../src/modules/journeys/stationResolver');
 
-const container = createContainer({ env: { ...process.env, ENGINE_POOL_SIZE: '2' } });
+const container = createContainer({ env: { ...process.env, RATE_LIMIT_ENABLED: '0', ENGINE_POOL_SIZE: '2' } });
 // Thin adapters so the assertions below read the same as before the refactor.
 const engine = {
     isReady: () => container.routing.isReady(),

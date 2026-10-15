@@ -37,6 +37,7 @@ restart policy is on-failure, and there are 3 replicas.
    | `LOG_FORMAT` | `json` | One JSON line per log entry; each line includes the replica id |
    | `ROUTE_CACHE_MAX_MB` | `256` | Route cache memory budget |
    | `SMALL_CACHE_MAX_MB` | `32` | Schedule and station cache budgets |
+   | `TRUST_PROXY` | `1` (Railway only) or `2` (Cloudflare in front) | Proxy hops trusted for the real client IP; wrong values make rate limits per-proxy or spoofable |
 
 3. **Resources.** Give each replica about **2 vCPU and 1 GB memory** if your
    plan allows; that is the size `docs/CAPACITY.md` measured (~1,900 req/s
@@ -66,6 +67,26 @@ restart policy is on-failure, and there are 3 replicas.
 - **Data updates** are deploys: the weekly data-refresh PR (see
   `datapipe/README.md`), once merged, triggers a new deploy, which Railway rolls
   out behind the healthcheck.
+
+### Rate limiting
+
+Each instance limits clients by IP (IPv6 by /64), in two layers:
+
+| Limit | Default | Applies to |
+|---|---|---|
+| Requests | 50/s per client, bursts of 200 (`RATE_LIMIT_RPS`, `RATE_LIMIT_BURST`) | every `/api` call except `/api/health` |
+| Engine work | 5/s per client, bursts of 30 (`ENGINE_RATE_LIMIT_RPS`, `ENGINE_RATE_LIMIT_BURST`) | only searches **not** already cached |
+
+Popular (cached) searches are never throttled; a client spraying unique
+searches is. Limited requests get `429` with `Retry-After`, counted in
+`railyatra_rate_limited_total`. Defaults are generous because many mobile users
+share one carrier IP. Limits are per instance, so the fleet-wide limit is
+roughly limit x replicas; for a hard global limit, add a Cloudflare rate-limiting
+rule. Turn limits off with `RATE_LIMIT_ENABLED=0` (only for load tests).
+
+**Set `TRUST_PROXY` correctly.** With Cloudflare in front, use `2`. If people can
+reach the `*.up.railway.app` address directly, they can bypass Cloudflare and
+forge their apparent IP; avoid publishing that address.
 
 ## 3. CDN in front (Cloudflare, free plan)
 
@@ -111,6 +132,10 @@ workflow; it appears once the file is on the default branch). It:
    seconds;
 3. combines the results into one pass/fail verdict on the job summary page:
    p99 upper bound, failure rate, 503 shed rate and status codes.
+
+Before running it, set `RATE_LIMIT_ENABLED=0` on the staging service (each
+runner is a single IP sending hundreds of requests per second, which the
+per-client limits would correctly throttle), and turn it back on afterwards.
 
 Suggested ladder against a staging deployment (never production without
 warning):

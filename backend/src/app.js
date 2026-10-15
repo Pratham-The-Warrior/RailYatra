@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const modules = require('./modules');
 const { HttpError } = require('./platform/errors');
+const { rateLimitMiddleware } = require('./platform/rateLimit');
 
 /**
  * Builds the HTTP application from a container (see container.js).
@@ -14,8 +15,8 @@ function createApp(container, { featureModules = modules } = {}) {
     const { routing, metrics, log, config } = container;
     const app = express();
 
-    // Trust the first reverse proxy (load balancer / CDN) for client IPs.
-    app.set('trust proxy', 1);
+    // Client IP = the entry added by the outermost trusted proxy (TRUST_PROXY hops).
+    app.set('trust proxy', config.trustProxy);
     app.disable('x-powered-by');
 
     // Security headers, data version and request metrics.
@@ -49,6 +50,17 @@ function createApp(container, { featureModules = modules } = {}) {
         });
         next();
     });
+
+    // Per-client request limit on the API (health checks exempt). Runs after the
+    // headers/metrics middleware so 429s are labelled and counted.
+    if (container.requestLimiter) {
+        app.use('/api', rateLimitMiddleware({
+            limiter: container.requestLimiter,
+            metrics,
+            name: 'requests',
+            skip: (req) => req.path === '/health'
+        }));
+    }
 
     app.use(express.json({ limit: '10kb' }));
 

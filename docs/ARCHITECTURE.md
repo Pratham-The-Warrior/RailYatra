@@ -98,6 +98,10 @@ instead of silently falling back.
 | `REFERENCE_DATA_DIR` | project root | Where `stations.json`, `city_stations.json`, category files live |
 | `ROUTING_ADAPTER` | `local` | RoutingPort implementation |
 | `LOG_FORMAT` | text | `json` for one JSON object per line |
+| `TRUST_PROXY` | 1 | Trusted proxy hops for the client IP (2 with Cloudflare + Railway) |
+| `RATE_LIMIT_ENABLED` | 1 | Per-client rate limits (disable only for load tests) |
+| `RATE_LIMIT_RPS` / `RATE_LIMIT_BURST` | 50 / 200 | Per-client API request limit |
+| `ENGINE_RATE_LIMIT_RPS` / `ENGINE_RATE_LIMIT_BURST` | 5 / 30 | Per-client limit on uncached searches (engine work) |
 | `INSTANCE_ID` | `RAILWAY_REPLICA_ID` or random | Instance id in logs, `/api/health` and the `X-Instance-Id` header |
 
 ## Testing
