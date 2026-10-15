@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Loader2, X, Building2 } from 'lucide-react';
 import { Station } from '@/types';
+import { api } from '@/api/endpoints';
 
 interface StationSearchInputProps {
     value: string;
@@ -49,9 +50,7 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
 
         const fetchStations = async () => {
             try {
-                const res = await fetch(`/api/stations?q=${encodeURIComponent(query)}`, {
-                    signal: abortController.signal
-                });
+                const res = await api.stations(query, { signal: abortController.signal });
                 if (res.ok) {
                     const text = await res.text();
                     if (text) {

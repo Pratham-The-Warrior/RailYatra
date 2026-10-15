@@ -33,11 +33,11 @@ special trains, availability) is ever added, the key must include the date again
 ## 2. Phase 1: Shipped and load-tested (this change)
 
 **Changes**
-- **Engine pool** (`backend/src/services/engine.service.js`): N engine processes (default = CPU
+- **Engine pool** (now `backend/src/platform/routing/enginePool.js`): N engine processes (default = CPU
   cores, ~55 MB each), least-in-flight dispatch, UUID request IDs, per-worker bounded queue
   (load shedding with 503 instead of unbounded latency), immediate failure of in-flight requests on
   crash, exponential-backoff respawn, spawn-error handling.
-- **Caching** (`backend/src/services/cache.js`): LRU + TTL with **request coalescing**
+- **Caching** (now `backend/src/platform/cache.js`): LRU + TTL with **request coalescing**
   (concurrent identical misses share one engine call). Applied to route (keyed by weekday),
   schedule, and station autocomplete. Categories are pre-parsed once at startup.
   `Cache-Control` headers make every GET (and the idempotent route POST) CDN-cacheable.
@@ -187,6 +187,13 @@ and the load generator competes for CPU. Compare uniform-traffic numbers only ac
 runs.
 
 ### Phase 4: Data platform and product features
+**Progress (shipped):** the ingestion pipeline is built, as `datapipe/`. It handles sources in
+priority order (the current JSON and any GTFS feed), validates and repairs data, gates on diffs,
+publishes atomically, and runs a weekly refresh PR, all backed by tests and a CI data check. See
+`datapipe/README.md` for the source research and the first-run findings. The blocker for complete,
+current data is now **a licensed source**, not code. Postgres as source of truth (item 1) is
+deferred: the versioned JSON plus manifest is sufficient until user data exists.
+
 1. **Source of truth**: PostgreSQL (+PostGIS for station geography) for timetables, stations,
    cities, and user data; ingestion pipeline with validation (no negative distances, monotonic
    times, known stations) that emits the engine artifact. The query path stays in-memory; the DB is
@@ -232,6 +239,12 @@ so engineering investment compounds.
 ---
 
 ## 6. Known remaining issues (tracked, not fixed here)
+
+- Frontend build tooling: `npm audit` reports 7 findings (5 high) in Tailwind CSS v3's transitive
+  file-matching dependencies (braces, micromatch, chokidar, …). They run only at build time on our
+  own source files and never ship to browsers. The fix is a Tailwind 4 migration (a major version with
+  config and class changes) and should be done as its own reviewed change. The backend has
+  0 vulnerabilities (`npm audit`), and in-range fixes are applied to both packages.
 
 - Live Status: the endpoint now returns an explicit 503 "temporarily unavailable" message, which
   the page displays. A real implementation needs a licensed data source (feature #7).

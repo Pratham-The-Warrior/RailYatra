@@ -1,0 +1,14 @@
+{
+  "built_at": "2026-10-15T18:57:43Z",
+  "rejected_count": 0,
+  "sources": {
+    "railyatra-master": 1979
+  },
+  "station_count": 3263,
+  "train_count": 1979,
+  "trains_by_source": {
+    "railyatra-master": 1979
+  },
+  "version": "3269c3659ad5",
+  "warning_count": 56
+}

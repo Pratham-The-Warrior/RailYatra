@@ -31,12 +31,18 @@ spec:
         - name: api
           image: ghcr.io/pratham-the-warrior/railyatra:latest
           ports: [{ containerPort: 3000 }]
+          # Sized from measurements (docs/CAPACITY.md): the Node gateway saturates
+          # one core at ~1.9k req/s, so 2-vCPU pods (gateway + 2 engines) use
+          # their CPU fully; scale out with more pods, not bigger ones.
+          # Memory: ~185 MB baseline + cache budgets (256 + 32 + 32 MB) < 768Mi.
           env:
-            - { name: ENGINE_POOL_SIZE, value: "4" }
-            - { name: ROUTE_CACHE_SIZE, value: "100000" }
+            - { name: ENGINE_POOL_SIZE, value: "2" }
+            - { name: ROUTE_CACHE_MAX_MB, value: "256" }
+            - { name: SMALL_CACHE_MAX_MB, value: "32" }
+            - { name: LOG_FORMAT, value: "json" }
           resources:
-            requests: { cpu: "4", memory: "768Mi" }
-            limits:   { cpu: "4", memory: "1Gi" }
+            requests: { cpu: "2", memory: "512Mi" }
+            limits:   { cpu: "2", memory: "768Mi" }
           readinessProbe:
             httpGet: { path: /readyz, port: 3000 }
             periodSeconds: 5
@@ -67,8 +73,8 @@ metadata:
   name: railyatra-api
 spec:
   scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: railyatra-api }
-  minReplicas: 3
-  maxReplicas: 200
+  minReplicas: 3      # high availability across zones
+  maxReplicas: 100    # ~190k req/s at 100% (1.9k/pod); see docs/CAPACITY.md
   metrics:
     - type: Resource
       resource:

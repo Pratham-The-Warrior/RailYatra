@@ -1,97 +1,74 @@
 const express = require('express');
-const path = require('path');
 const fs = require('fs');
-const apiRoutes = require('./api/routes');
-const engine = require('./services/engine.service');
-const metrics = require('./services/metrics');
-const log = require('./services/logger');
-
-const app = express();
-
-// Trust the first reverse proxy (load balancer / CDN) for client IPs.
-app.set('trust proxy', 1);
-app.disable('x-powered-by');
+const path = require('path');
+const modules = require('./modules');
+const { HttpError } = require('./platform/errors');
 
 /**
- * Security headers + request metrics.
+ * Builds the HTTP application from a container (see container.js).
+ * Cross-cutting concerns live here; features live in ./modules.
  */
-app.use((req, res, next) => {
-    res.set({
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+function createApp(container, { featureModules = modules } = {}) {
+    const { routing, metrics, log } = container;
+    const app = express();
+
+    // Trust the first reverse proxy (load balancer / CDN) for client IPs.
+    app.set('trust proxy', 1);
+    app.disable('x-powered-by');
+
+    // Security headers, data version and request metrics.
+    app.use((req, res, next) => {
+        res.set({
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY',
+            'Referrer-Policy': 'strict-origin-when-cross-origin',
+            'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+        });
+        if (req.path.startsWith('/api/')) {
+            const v = routing.dataVersion();
+            if (v) res.set('X-Data-Version', v);
+        }
+        // Label from the full original path, computed now: inside mounted
+        // routers Express rewrites req.path, so reading it on 'finish' would
+        // mislabel every API response as "static". Low cardinality: /api/<resource>.
+        const fullPath = req.originalUrl.split('?')[0];
+        const route = fullPath.startsWith('/api/') ? '/api/' + fullPath.split('/')[2] : 'static';
+        const start = process.hrtime.bigint();
+        res.on('finish', () => {
+            metrics.inc('http_requests_total', { route, status: res.statusCode });
+            metrics.observe('http_request_ms', Number(process.hrtime.bigint() - start) / 1e6, { route });
+        });
+        next();
     });
-    if (req.path.startsWith('/api/')) {
-        const v = engine.dataVersion();
-        if (v) res.set('X-Data-Version', v);
+
+    app.use(express.json({ limit: '10kb' }));
+
+    for (const mod of featureModules) {
+        app.use(mod.mountPath, mod.createRouter(container));
     }
-    const start = process.hrtime.bigint();
-    res.on('finish', () => {
-        // Low-cardinality route label: /api/<resource>
-        const route = req.path.startsWith('/api/') ? '/api/' + req.path.split('/')[2] : 'static';
-        const ms = Number(process.hrtime.bigint() - start) / 1e6;
-        metrics.inc('http_requests_total', { route, status: res.statusCode });
-        metrics.observe('http_request_ms', ms, { route });
+    app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
+    // Frontend production bundle with client-side routing fallback.
+    const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+    if (fs.existsSync(distPath)) {
+        // Hashed assets are immutable; index.html must always revalidate.
+        app.use('/assets', express.static(path.join(distPath, 'assets'), { immutable: true, maxAge: '1y' }));
+        app.use(express.static(distPath, { maxAge: '1h' }));
+        app.use((req, res) => {
+            res.set('Cache-Control', 'no-cache');
+            res.sendFile(path.join(distPath, 'index.html'));
+        });
+    }
+
+    // Central error handler: client errors keep their message, server errors never leak details.
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, next) => {
+        const status = err instanceof HttpError ? err.status : (err.status || err.statusCode || 500);
+        if (status >= 500) log.error('unhandled request error', { path: req.path, err: err.message });
+        res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
     });
-    next();
-});
 
-app.use(express.json({ limit: '10kb' }));
-
-/**
- * Liveness: process is up. Readiness: at least one engine worker can serve.
- * Load balancers / Kubernetes should route traffic based on readiness.
- */
-const health = (req, res) => {
-    res.json({
-        status: "ok",
-        uptime: process.uptime(),
-        engine: engine.isReady(),
-        dataVersion: engine.dataVersion(),
-        engines: engine.status(),
-        platform: process.platform
-    });
-};
-app.get('/api/health', health);
-app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
-app.get('/readyz', (req, res) => {
-    if (engine.isReady()) return res.json({ status: 'ready' });
-    res.status(503).json({ status: 'engine not ready' });
-});
-app.get('/metrics', (req, res) => {
-    res.type('text/plain; version=0.0.4').send(metrics.render());
-});
-
-/**
- * Root API Gateway
- */
-app.use('/api', apiRoutes);
-app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
-
-/**
- * Frontend Production Serving
- * Serves the React 'dist' bundle and handles client-side routing.
- */
-const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
-if (fs.existsSync(distPath)) {
-    // Hashed assets are immutable; index.html must always revalidate.
-    app.use('/assets', express.static(path.join(distPath, 'assets'), { immutable: true, maxAge: '1y' }));
-    app.use(express.static(distPath, { maxAge: '1h' }));
-    app.use((req, res) => {
-        res.set('Cache-Control', 'no-cache');
-        res.sendFile(path.join(distPath, 'index.html'));
-    });
+    return app;
 }
 
-/**
- * Error handler: malformed JSON bodies etc. never leak stack traces.
- */
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-    const status = err.status || err.statusCode || 500;
-    if (status >= 500) log.error('unhandled request error', { path: req.path, err: err.message });
-    res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
-});
-
-module.exports = app;
+module.exports = { createApp };

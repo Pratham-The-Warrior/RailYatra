@@ -3,7 +3,11 @@
  *
  * Usage: node run.js <scenario> [--url http://localhost:3000] [--connections 100]
  *                    [--duration 20] [--zipf 1.1] [--json out.json]
- *                    [--max-p99 <ms>] [--min-rps <n>]
+ *                    [--max-p99 <ms>] [--min-rps <n>] [--rate <total req/s>]
+ *
+ * --rate caps the total request rate across all connections, which models
+ * many mostly-idle users (high --connections, realistic --rate) rather than
+ * a few connections hammering the server.
  *
  * Exits non-zero if any request errors, any non-2xx response, or a threshold
  * is violated, so it can be used as a CI performance gate.
@@ -26,6 +30,7 @@ const url = args.url || 'http://localhost:3000';
 const connections = Number(args.connections || 100);
 const duration = Number(args.duration || 20);
 const zipfS = Number(args.zipf ?? 1.1);
+const overallRate = args.rate ? Number(args.rate) : undefined;
 
 // Busiest junctions in master_train_data.json, ordered by stop count.
 const STATIONS = ['BZA', 'ET', 'CNB', 'BSL', 'KYN', 'DDU', 'NGP', 'VGLJ', 'HWH', 'BBS', 'LKO',
@@ -83,12 +88,12 @@ function mixedRequest() {
 }
 
 const instance = autocannon({
-    url, connections, duration,
+    url, connections, duration, overallRate,
     requests: [{ setupRequest: (req) => ({ ...req, ...(scenario === 'mixed' ? mixedRequest() : scenario === 'pareto' ? paretoRequest() : routeRequest()) }) }]
 }, (err, res) => {
     if (err) { console.error(err); process.exit(1); }
     const summary = {
-        scenario, connections, duration, zipf: zipfS,
+        scenario, connections, duration, zipf: zipfS, rate_limit: overallRate || null,
         rps_avg: res.requests.average, rps_p50: res.requests.p50,
         latency_p50_ms: res.latency.p50, latency_p90_ms: res.latency.p90,
         latency_p99_ms: res.latency.p99, latency_max_ms: res.latency.max,

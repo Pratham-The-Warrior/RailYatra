@@ -2,7 +2,7 @@
 CXX = g++
 CXXFLAGS = -O2 -std=c++17 -static -static-libgcc -static-libstdc++
 TARGET = route_engine
-SOURCES = main.cpp graph.cpp dijkstra.cpp trip_router.cpp
+SOURCES = main.cpp graph.cpp dijkstra.cpp trip_router.cpp handlers.cpp
 
 all: $(TARGET)
 

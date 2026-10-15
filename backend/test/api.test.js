@@ -5,22 +5,38 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 
-process.env.ENGINE_POOL_SIZE = '2';
-const app = require('../src/app');
-const engine = require('../src/services/engine.service');
-const { _internals } = require('../src/api/controllers/route.controller');
+const { createContainer } = require('../src/container');
+const { createApp } = require('../src/app');
+const { weekdayOf } = require('../src/platform/validation');
+const { resolveStationCodes } = require('../src/modules/journeys/stationResolver');
+
+const container = createContainer({ env: { ...process.env, ENGINE_POOL_SIZE: '2' } });
+// Thin adapters so the assertions below read the same as before the refactor.
+const engine = {
+    isReady: () => container.routing.isReady(),
+    status: () => container.routing.status(),
+    reload: () => container.reloadData(),
+    shutdown: () => container.shutdown()
+};
+const _internals = {
+    weekdayOf,
+    resolveStationCodes: (input) => resolveStationCodes(input, container.referenceData.current().cities,
+        container.config.limits.maxCityStations),
+    get routeCache() { return container.caches.get('route'); }
+};
 
 let server, base;
 
 before(async () => {
-    engine.spawnEngine();
+    container.start();
+    const app = createApp(container);
     server = app.listen(0);
     base = `http://127.0.0.1:${server.address().port}`;
     for (let i = 0; i < 100 && !engine.isReady(); i++) await new Promise(r => setTimeout(r, 100));
     assert.ok(engine.isReady(), 'engine did not become ready');
 });
 
-after(() => { engine.shutdown(); server.close(); });
+after(async () => { await engine.shutdown(); server.close(); });
 
 const post = (body) => fetch(`${base}/api/route`, {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body)
@@ -140,7 +156,7 @@ test('pareto endpoint validates like the list endpoint', async () => {
 });
 
 test('cache generation guard drops results computed before a clear', async () => {
-    const { LruCache } = require('../src/services/cache');
+    const { LruCache } = require('../src/platform/cache');
     const c = new LruCache({ name: 'test', maxEntries: 10, ttlMs: 60000 });
     let release;
     const pending = c.getOrCompute('k', () => new Promise((r) => { release = r; }));
@@ -183,7 +199,7 @@ test('timetable hot reload swaps engines without failing in-flight traffic', asy
 });
 
 test('cache recovers after a compute function throws (sync or async)', async () => {
-    const { LruCache } = require('../src/services/cache');
+    const { LruCache } = require('../src/platform/cache');
     const c = new LruCache({ name: 'test2', maxEntries: 10, ttlMs: 60000 });
     await assert.rejects(c.getOrCompute('a', () => { throw new Error('sync boom'); }), /sync boom/);
     await assert.rejects(c.getOrCompute('b', async () => { throw new Error('async boom'); }), /async boom/);

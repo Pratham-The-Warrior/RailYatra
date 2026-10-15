@@ -2288,6 +2288,10 @@
         "code": "CBP"
     },
     {
+        "name": "CHAIBASA",
+        "code": "CBSA"
+    },
+    {
         "name": "CHAURI CHAURA",
         "code": "CC"
     },
@@ -4866,10 +4870,6 @@
     {
         "name": "IZZATNAGAR JN",
         "code": "IZN"
-    },
-    {
-        "name": "JALNA",
-        "code": "J"
     },
     {
         "name": "JHALIDA",
