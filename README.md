@@ -56,6 +56,8 @@ See [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit, capacity
 - **Tests**: `cd backend && npm test` (requires a built engine). CI (`.github/workflows/ci.yml`) also runs a frontend typecheck/build, a load-test gate and a Docker smoke test.
 - **API**: route search is available as `GET /api/route?from=&to=&date=…` (CDN-cacheable; used by the frontend) and as `POST /api/route` with a JSON body.
 - **Logs**: set `LOG_FORMAT=json` for structured one-line JSON logs.
+- **Best trade-offs**: `GET /api/route/pareto?from=&to=&date=&max_switches=&max_wait=` returns, for each number of changes, the earliest possible arrival (exact; see `engine/trip_router.cpp`). Verified by `python3 engine/tests/validate_pareto.py`.
+- **Timetable hot reload**: replace `master_train_data.json` and send `SIGHUP` to the server; a new engine pool is swapped in with zero downtime and caches are invalidated. Responses carry `X-Data-Version`.
 - **Load tests**: `cd loadtest && npm install && node run.js mixed --url http://localhost:3000`.
 - **Deploy**: `deploy/docker-compose.yml` (+ nginx edge) and `deploy/k8s/railyatra.yaml` (HPA, PDB).
 

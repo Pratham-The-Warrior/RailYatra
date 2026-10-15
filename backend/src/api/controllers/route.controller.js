@@ -68,57 +68,41 @@ const clamp = (v, lo, hi, dflt) => {
 };
 
 /**
- * Controller to handle route search. Supports "All Stations" searches via CITY: prefix.
+ * Validates and normalizes route-search input shared by the list and pareto
+ * endpoints. Returns { error } or the normalized fields.
  */
-exports.searchRoute = async (req, res) => {
-    // GET (query string) is CDN-cacheable by URL; POST (JSON body) kept for compatibility.
-    const input = (req.method === 'GET' ? req.query : req.body) || {};
-    const { from, to, date, max_switches, max_wait, sort_by, top_k } = input;
-
-    if (!from || !to || !date) {
-        return res.status(400).json({ error: "Missing required fields: from, to, date" });
-    }
+function parseRouteInput(input) {
+    const { from, to, date, max_switches, max_wait, sort_by, top_k } = input || {};
+    if (!from || !to || !date) return { error: "Missing required fields: from, to, date" };
 
     const weekday = weekdayOf(date);
-    if (weekday === -1) {
-        return res.status(400).json({ error: "Invalid date, expected YYYY-MM-DD" });
-    }
+    if (weekday === -1) return { error: "Invalid date, expected YYYY-MM-DD" };
 
     const fromCodes = resolveStationCodes(from);
     const toCodes = resolveStationCodes(to);
-    if (fromCodes.length === 0) {
-        return res.status(400).json({ error: "Unknown source city or station" });
-    }
-    if (toCodes.length === 0) {
-        return res.status(400).json({ error: "Unknown destination city or station" });
-    }
+    if (fromCodes.length === 0) return { error: "Unknown source city or station" };
+    if (toCodes.length === 0) return { error: "Unknown destination city or station" };
 
-    const isMulti = fromCodes.length > 1 || toCodes.length > 1;
     const { limits } = config;
-    const payload = {
-        type: isMulti ? 'multi_route' : 'route',
-        from: isMulti ? fromCodes : fromCodes[0],
-        to: isMulti ? toCodes : toCodes[0],
-        date,
-        max_switches: clamp(max_switches, 0, limits.maxSwitches, 5),
-        max_wait: clamp(max_wait, 30, limits.maxWaitMin, 600),
-        sort_by: ['time', 'distance', 'switches'].includes(sort_by) ? sort_by : 'switches',
-        top_k: clamp(top_k, 1, limits.maxTopK, 10)
+    return {
+        fromCodes, toCodes, date, weekday,
+        maxSwitches: clamp(max_switches, 0, limits.maxSwitches, 5),
+        maxWait: clamp(max_wait, 30, limits.maxWaitMin, 600),
+        sortBy: ['time', 'distance', 'switches'].includes(sort_by) ? sort_by : 'switches',
+        topK: clamp(top_k, 1, limits.maxTopK, 10)
     };
+}
 
-    const cacheKey = JSON.stringify([payload.type, payload.from, payload.to, weekday,
-        payload.max_switches, payload.max_wait, payload.sort_by, payload.top_k]);
-
+/**
+ * Runs an engine request through the cache and writes the HTTP response.
+ * Deterministic engine input errors are cached too (as { __error }).
+ */
+async function respondCached(res, cacheKey, payload) {
     try {
         const results = await routeCache.getOrCompute(cacheKey, async () => {
             const r = await engine.sendRequestToEngine(payload);
-            if (r && r.error) {
-                // Deterministic input errors are cacheable too; mark them.
-                return { __error: r.error };
-            }
-            return r;
+            return r && r.error ? { __error: r.error } : r;
         });
-
         if (results && results.__error) {
             return res.status(400).json({ error: results.__error });
         }
@@ -127,6 +111,53 @@ exports.searchRoute = async (req, res) => {
     } catch (e) {
         res.status(e.status || 500).json({ error: e.message });
     }
+}
+
+// GET (query string) is CDN-cacheable by URL; POST (JSON body) kept for compatibility.
+const inputOf = (req) => (req.method === 'GET' ? req.query : req.body) || {};
+
+/**
+ * Route search (ranked list of up to top_k journeys).
+ * Supports "All Stations" searches via CITY: prefix.
+ */
+exports.searchRoute = async (req, res) => {
+    const q = parseRouteInput(inputOf(req));
+    if (q.error) return res.status(400).json({ error: q.error });
+
+    const isMulti = q.fromCodes.length > 1 || q.toCodes.length > 1;
+    const payload = {
+        type: isMulti ? 'multi_route' : 'route',
+        from: isMulti ? q.fromCodes : q.fromCodes[0],
+        to: isMulti ? q.toCodes : q.toCodes[0],
+        date: q.date,
+        max_switches: q.maxSwitches,
+        max_wait: q.maxWait,
+        sort_by: q.sortBy,
+        top_k: q.topK
+    };
+    const cacheKey = JSON.stringify([payload.type, payload.from, payload.to, q.weekday,
+        payload.max_switches, payload.max_wait, payload.sort_by, payload.top_k]);
+    return respondCached(res, cacheKey, payload);
+};
+
+/**
+ * Pareto search: for each number of changes, the earliest-arriving journey,
+ * listed only when it beats every option with fewer changes.
+ */
+exports.paretoRoute = async (req, res) => {
+    const q = parseRouteInput(inputOf(req));
+    if (q.error) return res.status(400).json({ error: q.error });
+
+    const payload = {
+        type: 'pareto',
+        from: q.fromCodes,
+        to: q.toCodes,
+        date: q.date,
+        max_switches: q.maxSwitches,
+        max_wait: q.maxWait
+    };
+    const cacheKey = JSON.stringify(['pareto', q.fromCodes, q.toCodes, q.weekday, q.maxSwitches, q.maxWait]);
+    return respondCached(res, cacheKey, payload);
 };
 
 exports._internals = { resolveStationCodes, weekdayOf, routeCache };

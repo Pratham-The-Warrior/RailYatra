@@ -29,6 +29,9 @@ jobs:
       - name: Build engine
         run: make -C engine -j"$(nproc)"
 
+      - name: Validate routing engines against the raw timetable
+        run: python3 engine/tests/validate_pareto.py 100 1
+
       - name: Backend dependencies
         run: npm ci
         working-directory: backend

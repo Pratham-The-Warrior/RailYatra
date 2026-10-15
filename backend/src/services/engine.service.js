@@ -1,6 +1,8 @@
 const { spawn } = require('child_process');
 const crypto = require('crypto');
+const fs = require('fs');
 const config = require('../config');
+const cache = require('./cache');
 const metrics = require('./metrics');
 const log = require('./logger');
 
@@ -11,20 +13,40 @@ const log = require('./logger');
  * and dispatches every request to the worker with the fewest in-flight
  * requests. A crashed worker only affects its own in-flight requests, which
  * are rejected immediately; the worker is respawned with backoff.
+ *
+ * Timetable hot reload (`reload()`, wired to SIGHUP): a complete new pool is
+ * started on the current data file and swapped in only once it is ready; the
+ * old pool drains its in-flight requests and is then stopped, and all
+ * response caches are invalidated. If the new pool fails, the old one keeps
+ * serving.
  */
-const workers = [];
+let workers = [];
 let shuttingDown = false;
+let dataVersion = null;
+let reloading = null;
 
-function createWorker(index) {
+/** Short content hash of the timetable file, exposed as X-Data-Version. */
+function hashFile(path) {
+    return new Promise((resolve, reject) => {
+        const h = crypto.createHash('sha256');
+        fs.createReadStream(path)
+            .on('data', (d) => h.update(d))
+            .on('error', reject)
+            .on('end', () => resolve(h.digest('hex').slice(0, 12)));
+    });
+}
+
+function createWorker(index, list = workers) {
     const worker = {
         index,
         proc: null,
         ready: false,
         pending: new Map(),   // request_id -> { resolve, reject, timer }
         buffer: '',
-        restarts: 0
+        restarts: 0,
+        retired: false
     };
-    workers[index] = worker;
+    list[index] = worker;
     startWorker(worker);
     return worker;
 }
@@ -62,7 +84,7 @@ function startWorker(worker) {
         worker.ready = false;
         worker.proc = null;
         failPending(worker, new Error('Engine process exited'));
-        if (shuttingDown) return;
+        if (shuttingDown || worker.retired) return;
         const delay = Math.min(30000, 1000 * 2 ** worker.restarts++);
         metrics.inc('engine_restarts_total');
         log.error('engine exited, restarting', { worker: worker.index, code, delayMs: delay });
@@ -109,9 +131,54 @@ function pickWorker() {
     return best;
 }
 
-/** Spawns the engine pool. Safe to call once at startup. */
+/** Spawns the engine pool. Call once at startup. */
 function spawnEngine() {
     for (let i = 0; i < config.enginePoolSize; i++) createWorker(i);
+    hashFile(config.dataDirPath)
+        .then((v) => { if (!dataVersion) dataVersion = v; })
+        .catch((e) => log.error('could not hash timetable', { err: e.message }));
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Stops a worker once its in-flight requests finish (or after the timeout). */
+async function retire(worker) {
+    worker.retired = true;
+    const deadline = Date.now() + config.engineTimeoutMs;
+    while (worker.pending.size > 0 && Date.now() < deadline) await sleep(50);
+    if (worker.proc) worker.proc.kill('SIGTERM');
+}
+
+/**
+ * Zero-downtime timetable reload. Resolves with the new data version.
+ * Concurrent calls share the same reload.
+ */
+function reload({ readyTimeoutMs = 120000 } = {}) {
+    if (reloading) return reloading;
+    reloading = (async () => {
+        const version = await hashFile(config.dataDirPath);
+        log.info('timetable reload started', { from: dataVersion, to: version });
+        const next = [];
+        for (let i = 0; i < config.enginePoolSize; i++) createWorker(i, next);
+
+        const deadline = Date.now() + readyTimeoutMs;
+        while (!next.every((w) => w.ready) && Date.now() < deadline) await sleep(50);
+        if (!next.every((w) => w.ready)) {
+            next.forEach((w) => { w.retired = true; if (w.proc) w.proc.kill('SIGTERM'); });
+            metrics.inc('engine_reload_failures_total');
+            throw new Error('New engine pool did not become ready; keeping the current timetable');
+        }
+
+        const old = workers;
+        workers = next;
+        dataVersion = version;
+        cache.clearAll();
+        metrics.inc('engine_reloads_total');
+        log.info('timetable reload complete', { version });
+        old.forEach((w) => { if (w) retire(w); });
+        return version;
+    })().finally(() => { reloading = null; });
+    return reloading;
 }
 
 /** Sends a request to the least-loaded engine worker. */
@@ -172,8 +239,10 @@ function status() {
 module.exports = {
     spawnEngine,
     sendRequestToEngine,
+    reload,
     shutdown,
     status,
+    dataVersion: () => dataVersion,
     isReady: () => workers.some(w => w && w.ready),
     getEngineProcess: () => (workers.find(w => w && w.proc) || {}).proc || null
 };

@@ -131,20 +131,60 @@ distributed load test still need cloud infrastructure.
 6. Distributed load test (k6 cloud or several autocannon runners) proving **20k origin rps** with
    HPA scale-up < 2 min and no 5xx during a rolling deploy and during a forced pod kill.
 
-### Phase 3: Algorithmic and data-path scale (target: 5× cheaper misses)
-1. **Replace layered Dijkstra with RAPTOR / Connection Scan (CSA).** These are designed for
-   timetables, are typically an order of magnitude faster, and give Pareto-optimal
-   (arrival time × transfers) answers natively. That also fixes "dominated" results (e.g. alighting
-   from a train that continues to the destination). Keep the current engine as an oracle in
-   differential tests.
-2. **Binary timetable artifact** (FlatBuffers/Cap'n Proto) built offline: engine startup from
-   seconds to milliseconds, faster pod scale-up, mmap-shared across workers.
+### Phase 3: Algorithmic and data-path scale
+**Progress (shipped):** items 1 and 4 are done. Items 2, 3 and 5 are not started.
+
+1. ✅ **Exact Pareto router** (`engine/trip_router.cpp`, `GET /api/route/pareto`). For each number
+   of changes it returns the earliest possible arrival, listed only if it beats every option with
+   fewer changes.
+   - *Why not classic RAPTOR:* RailYatra enforces a **maximum** transfer wait (`max_wait`). Under a
+     maximum wait, arriving *earlier* at a junction can make a connection impossible, so RAPTOR's
+     "keep the earliest arrival per station" labels would silently miss valid journeys. The
+     implemented trip-based search labels concrete trip instances (train + calendar day) by
+     boarding index, which stays exact under both the 30-min minimum and the maximum wait.
+     Transfer windows are found by binary search over clock-sorted departures. That took mean
+     latency from 13.3 to 8.9 ms with identical results (p99 46 ms at up to 5 changes).
+   - *Validation* (`engine/tests/validate_pareto.py`, also run in CI): an independent Python
+     checker re-reads the raw timetable and, over 450 random queries including city-to-city:
+     (a) verifies every leg of **both** engines exists, runs that calendar day and respects the
+     transfer windows; (b) matches a brute-force enumeration exactly for 0 and 1 changes;
+     (c) confirms the Pareto router never arrives later than any classic-engine route with the same
+     or fewer changes (strictly earlier in 16,034 of 18,197 comparisons, 88%); (d) checks the frontier
+     strictly improves.
+   - *Data-quality fix found by the validator:* `day_of_journey` in the source data is wrong for
+     36 of 1,979 trains (e.g. 11466 lists UJN 23:50 as day 2), which shifted every later stop by
+     a day. Ingestion now derives arrival/departure days from consecutive clock times. This is
+     unambiguous because the largest gap between consecutive events in the data is 1,040 min
+     (< 24 h). The fix applies to both engines and the schedule endpoint.
+   - *UI:* a "Best trade-offs" panel above the results (feature #1 below). It loads independently
+     of the main list, so a failure there never affects normal results.
+   - The classic engine still powers the ranked list (up to 50 varied routes); the Pareto router
+     complements it. Replacing the list entirely would change what users see, which is a product
+     decision.
+2. **Binary timetable artifact** (FlatBuffers/Cap'n Proto) built offline. *Lower priority than
+   planned:* the engine currently loads the 16 MB JSON in ~0.35 s, so startup is not a bottleneck
+   at this data size.
 3. **Precompute and push to edge**: nightly materialize top-N O-D pairs × 7 weekdays into a KV
    (Redis/DynamoDB/edge KV). Popular searches never touch the engine.
-4. **Data versioning + hot reload**: timetable version in every cache key and response header;
-   atomic swap of the engine dataset without restarts.
+4. ✅ **Data versioning + zero-downtime hot reload.** Responses carry `X-Data-Version` (content hash
+   of the timetable). `SIGHUP` starts a complete new engine pool on the current data file and swaps
+   it in only once it is ready. In-flight requests on the old pool finish, then it is stopped.
+   Every response cache is invalidated, and a generation counter stops results computed before
+   the swap from being cached. If the new pool fails, the old one keeps serving. Verified: a
+   continuous-traffic test passes with zero failed requests during reload, and an end-to-end check
+   (delete a train from the file, `kill -HUP`) shows the version changes and the train disappears
+   without restarting the server. CDN copies expire on their own TTL (5 min for routes); purge the
+   CDN after a reload if faster propagation is needed.
 5. Multi-region active-active (read-only workload makes this straightforward): GeoDNS/anycast,
    per-region caches.
+
+**Phase 3 load test** (same 4-vCPU box, 100 connections, 15 s; `loadtest/results/03-*`):
+mixed traffic 2,061 rps / p99 142 ms. Pareto endpoint: 2,178 rps / p99 157 ms with realistic
+popularity skew, and 554 rps / p99 429 ms with uniform (cache-hostile) traffic. All runs had zero
+errors. Note: the uniform `route` scenario varies widely run to run on this shared box
+(830–1,844 rps across four runs of near-identical code) because the cache warms during the run
+and the load generator competes for CPU. Compare uniform-traffic numbers only across repeated
+runs.
 
 ### Phase 4: Data platform and product features
 1. **Source of truth**: PostgreSQL (+PostGIS for station geography) for timetables, stations,
@@ -196,5 +236,6 @@ so engineering investment compounds.
 - Live Status: the endpoint now returns an explicit 503 "temporarily unavailable" message, which
   the page displays. A real implementation needs a licensed data source (feature #7).
 - ✅ Removed the unused 5k-line `fareCalculator.ts` and the Windows-only `tests/test_engine.js`.
-- Results include dominated itineraries and near-duplicates differing only by transfer station;
-  addressed by RAPTOR's Pareto sets in Phase 3.
+- The ranked list (classic engine) still includes dominated itineraries and near-duplicates
+  differing only by transfer station. The "Best trade-offs" panel shows the clean Pareto set above
+  it; whether to filter the list itself is a product decision.

@@ -14,4 +14,10 @@ router.post('/', controller.searchRoute);
  */
 router.get('/', controller.searchRoute);
 
+/**
+ * @route   GET /api/route/pareto?from=&to=&date=&max_switches=&max_wait=
+ * @desc    Best trade-offs: earliest arrival for each number of changes
+ */
+router.get('/pareto', controller.paretoRoute);
+
 module.exports = router;

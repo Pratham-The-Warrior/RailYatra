@@ -1,0 +1,16 @@
+{
+  "scenario": "pareto",
+  "connections": 100,
+  "duration": 15,
+  "zipf": 1.1,
+  "rps_avg": 2177.87,
+  "rps_p50": 2285,
+  "latency_p50_ms": 38,
+  "latency_p90_ms": 76,
+  "latency_p99_ms": 157,
+  "latency_max_ms": 265,
+  "total": 32663,
+  "non2xx": 0,
+  "errors": 0,
+  "timeouts": 0
+}

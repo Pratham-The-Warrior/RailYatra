@@ -13,6 +13,7 @@
  *            when --zipf 0, realistic popularity skew with --zipf > 0).
  *   mixed  – realistic traffic mix: 60% station autocomplete, 25% route search,
  *            10% schedule lookup, 5% category listing.
+ *   pareto – GET /api/route/pareto only (best trade-offs), same pair/date mix as route.
  */
 const autocannon = require('autocannon');
 
@@ -66,6 +67,13 @@ function routeRequest() {
     };
 }
 
+function paretoRequest() {
+    const { body } = routeRequest();
+    const p = JSON.parse(body);
+    const qs = new URLSearchParams({ from: p.from, to: p.to, date: p.date, max_switches: '5', max_wait: '600' });
+    return { method: 'GET', path: `/api/route/pareto?${qs}` };
+}
+
 function mixedRequest() {
     const r = Math.random();
     if (r < 0.60) return { method: 'GET', path: `/api/stations?q=${rand(QUERIES)}` };
@@ -76,7 +84,7 @@ function mixedRequest() {
 
 const instance = autocannon({
     url, connections, duration,
-    requests: [{ setupRequest: (req) => ({ ...req, ...(scenario === 'mixed' ? mixedRequest() : routeRequest()) }) }]
+    requests: [{ setupRequest: (req) => ({ ...req, ...(scenario === 'mixed' ? mixedRequest() : scenario === 'pareto' ? paretoRequest() : routeRequest()) }) }]
 }, (err, res) => {
     if (err) { console.error(err); process.exit(1); }
     const summary = {

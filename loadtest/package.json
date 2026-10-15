@@ -4,7 +4,8 @@
   "description": "Load-test harness for the RailYatra API",
   "scripts": {
     "route": "node run.js route",
-    "mixed": "node run.js mixed"
+    "mixed": "node run.js mixed",
+    "pareto": "node run.js pareto"
   },
   "devDependencies": {
     "autocannon": "8.0.0"

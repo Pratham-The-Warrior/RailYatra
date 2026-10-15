@@ -1,5 +1,8 @@
 const metrics = require('./metrics');
 
+// Every cache registers itself so a timetable reload can invalidate them all.
+const registry = new Set();
+
 /**
  * In-process LRU cache with TTL and request coalescing.
  *
@@ -14,6 +17,16 @@ class LruCache {
         this.ttlMs = ttlMs;
         this.map = new Map();
         this.inflight = new Map();
+        // Bumped by clear(); a computation that started under an older
+        // generation must not write its (stale) result into the cache.
+        this.generation = 0;
+        registry.add(this);
+    }
+
+    clear() {
+        this.map.clear();
+        this.inflight.clear();
+        this.generation++;
     }
 
     get(key) {
@@ -49,15 +62,18 @@ class LruCache {
             return running;
         }
         metrics.inc('cache_misses_total', { cache: this.name });
-        const p = (async () => {
-            try {
-                const value = await compute();
-                this.set(key, value);
+        const generation = this.generation;
+        // compute() runs on a later tick, so `p` is registered before it can
+        // settle, even if compute throws synchronously.
+        const p = Promise.resolve()
+            .then(compute)
+            .then((value) => {
+                if (generation === this.generation) this.set(key, value);
                 return value;
-            } finally {
-                this.inflight.delete(key);
-            }
-        })();
+            })
+            .finally(() => {
+                if (this.inflight.get(key) === p) this.inflight.delete(key);
+            });
         this.inflight.set(key, p);
         return p;
     }
@@ -65,4 +81,8 @@ class LruCache {
     get size() { return this.map.size; }
 }
 
-module.exports = { LruCache };
+function clearAll() {
+    for (const c of registry) c.clear();
+}
+
+module.exports = { LruCache, clearAll };

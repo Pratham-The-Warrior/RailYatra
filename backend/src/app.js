@@ -22,6 +22,10 @@ app.use((req, res, next) => {
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
     });
+    if (req.path.startsWith('/api/')) {
+        const v = engine.dataVersion();
+        if (v) res.set('X-Data-Version', v);
+    }
     const start = process.hrtime.bigint();
     res.on('finish', () => {
         // Low-cardinality route label: /api/<resource>
@@ -44,6 +48,7 @@ const health = (req, res) => {
         status: "ok",
         uptime: process.uptime(),
         engine: engine.isReady(),
+        dataVersion: engine.dataVersion(),
         engines: engine.status(),
         platform: process.platform
     });

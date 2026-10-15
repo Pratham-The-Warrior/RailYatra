@@ -112,3 +112,82 @@ test('live status endpoint explains it is unavailable', async () => {
     assert.strictEqual(res.status, 503);
     assert.match((await res.json()).error, /unavailable/i);
 });
+
+test('pareto endpoint returns a strictly improving frontier', async () => {
+    const res = await fetch(`${base}/api/route/pareto?from=NDLS&to=CSMT&date=2026-10-20&max_switches=3`);
+    assert.strictEqual(res.status, 200);
+    const routes = await res.json();
+    assert.ok(routes.length >= 1);
+    for (let i = 1; i < routes.length; i++) {
+        assert.ok(routes[i].switches > routes[i - 1].switches);
+        // later departures can make total time misleading; compare absolute arrival
+        const arrival = (r) => {
+            const [h, m] = r.legs[0].departure_time.split(':').map(Number);
+            return h * 60 + m + r.total_time_min;
+        };
+        assert.ok(arrival(routes[i]) < arrival(routes[i - 1]));
+    }
+});
+
+test('pareto endpoint validates like the list endpoint', async () => {
+    const get = (qs) => fetch(`${base}/api/route/pareto?${qs}`);
+    assert.strictEqual((await get('from=NDLS&to=NDLS&date=2026-10-20')).status, 400);
+    assert.strictEqual((await get('from=XXXX&to=CSMT&date=2026-10-20')).status, 400);
+    assert.strictEqual((await get('from=NDLS&to=CSMT&date=bad')).status, 400);
+    const city = await get('from=CITY:MUMBAI&to=CITY:DELHI&date=2026-10-20');
+    assert.strictEqual(city.status, 200);
+    assert.ok((await city.json()).length >= 1);
+});
+
+test('cache generation guard drops results computed before a clear', async () => {
+    const { LruCache } = require('../src/services/cache');
+    const c = new LruCache({ name: 'test', maxEntries: 10, ttlMs: 60000 });
+    let release;
+    const pending = c.getOrCompute('k', () => new Promise((r) => { release = r; }));
+    c.clear();                       // e.g. a timetable reload happens mid-flight
+    while (!release) await new Promise((r) => setImmediate(r));   // compute starts on a later tick
+    release('stale');
+    assert.strictEqual(await pending, 'stale');   // caller still gets its answer
+    assert.strictEqual(c.get('k'), undefined);    // but it is not cached
+});
+
+test('timetable hot reload swaps engines without failing in-flight traffic', async () => {
+    const before = await (await fetch(`${base}/api/health`)).json();
+    assert.match(before.dataVersion, /^[0-9a-f]{12}$/);
+    const oldPids = engine.status().length;
+
+    // Keep traffic flowing during the reload; every request must succeed.
+    let stop = false, ok = 0, failed = 0;
+    const load = (async () => {
+        let i = 0;
+        while (!stop) {
+            const date = `2026-11-${String((i++ % 28) + 1).padStart(2, '0')}`;
+            const r = await fetch(`${base}/api/route?from=KOP&to=HWH&date=${date}&max_switches=2&top_k=5`);
+            if (r.status === 200) ok++; else failed++;
+        }
+    })();
+    const version = await engine.reload();
+    await new Promise((r) => setTimeout(r, 300));
+    stop = true;
+    await load;
+
+    assert.strictEqual(failed, 0);
+    assert.ok(ok > 0);
+    assert.strictEqual(version, before.dataVersion);           // same file, same hash
+    assert.ok(engine.isReady());
+    assert.strictEqual(engine.status().length, oldPids);
+    assert.strictEqual(_internals.routeCache.size <= 28, true);   // caches were cleared
+    const res = await fetch(`${base}/api/route?from=NDLS&to=CSMT&date=2026-10-20&top_k=3`);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers.get('x-data-version'), version);
+});
+
+test('cache recovers after a compute function throws (sync or async)', async () => {
+    const { LruCache } = require('../src/services/cache');
+    const c = new LruCache({ name: 'test2', maxEntries: 10, ttlMs: 60000 });
+    await assert.rejects(c.getOrCompute('a', () => { throw new Error('sync boom'); }), /sync boom/);
+    await assert.rejects(c.getOrCompute('b', async () => { throw new Error('async boom'); }), /async boom/);
+    assert.strictEqual(await c.getOrCompute('a', async () => 1), 1);
+    assert.strictEqual(await c.getOrCompute('b', async () => 2), 2);
+    assert.strictEqual(c.inflight.size, 0);
+});

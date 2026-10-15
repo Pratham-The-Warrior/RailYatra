@@ -36,4 +36,11 @@ function shutdown(signal) {
     setTimeout(() => process.exit(1), 15000).unref();
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// Zero-downtime timetable reload: replace master_train_data.json, then `kill -HUP <pid>`.
+process.on('SIGHUP', () => {
+    engine.reload()
+        .then((version) => log.info('timetable reloaded via SIGHUP', { version }))
+        .catch((e) => log.error('timetable reload failed', { err: e.message }));
+});
 process.on('SIGINT', () => shutdown('SIGINT'));
