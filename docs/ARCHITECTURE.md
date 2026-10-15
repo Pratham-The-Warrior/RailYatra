@@ -89,7 +89,7 @@ instead of silently falling back.
 | Variable | Default | Purpose |
 |---|---|---|
 | `PORT` | 3000 | HTTP port |
-| `ENGINE_POOL_SIZE` | CPU cores | Engine processes per instance |
+| `ENGINE_POOL_SIZE` | min(4, CPU cores) | Engine processes per instance (set it explicitly in containers) |
 | `ENGINE_TIMEOUT_MS` | 10000 | Per-request engine timeout |
 | `ENGINE_MAX_QUEUE` | 200 | In-flight requests per engine before shedding with 503 |
 | `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route cache entry limit and lifetime |
@@ -98,6 +98,7 @@ instead of silently falling back.
 | `REFERENCE_DATA_DIR` | project root | Where `stations.json`, `city_stations.json`, category files live |
 | `ROUTING_ADAPTER` | `local` | RoutingPort implementation |
 | `LOG_FORMAT` | text | `json` for one JSON object per line |
+| `INSTANCE_ID` | `RAILWAY_REPLICA_ID` or random | Instance id in logs, `/api/health` and the `X-Instance-Id` header |
 
 ## Testing
 

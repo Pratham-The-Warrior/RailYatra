@@ -109,6 +109,10 @@ test('configuration fails fast on invalid values', () => {
     assert.throws(() => loadConfig({ ROUTING_ADAPTER: 'magic' }), /ROUTING_ADAPTER/);
     assert.strictEqual(loadConfig({}).port, 3000);
     assert.strictEqual(loadConfig({ ENGINE_POOL_SIZE: '3' }).enginePoolSize, 3);
+    // Containers can report the host's core count: the default must stay bounded.
+    assert.ok(loadConfig({}).enginePoolSize >= 1 && loadConfig({}).enginePoolSize <= 4);
+    assert.strictEqual(loadConfig({ RAILWAY_REPLICA_ID: 'r-abc' }).instanceId, 'r-abc');
+    assert.match(loadConfig({}).instanceId, /^[0-9a-f]{8}$/);
 });
 
 test('every feature module honours the module contract', () => {
@@ -184,4 +188,33 @@ test('caches respect a byte budget, not just an entry count', () => {
     assert.strictEqual(c.bytes, 200 + 3);
     c.clear();
     assert.strictEqual(c.bytes, 0);
+});
+
+test('every response identifies the serving instance (for replica distribution checks)', async () => {
+    const res = await fetch(`${base}/api/health`);
+    const body = await res.json();
+    assert.strictEqual(res.headers.get('x-instance-id'), container.config.instanceId);
+    assert.strictEqual(body.instance, container.config.instanceId);
+});
+
+test('only successful cacheable responses are cacheable by CDNs; everything else is no-store', async () => {
+    const cc = async (p) => (await fetch(base + p)).headers.get('cache-control');
+    assert.match(await cc('/api/route?from=NDLS&to=CSMT&date=2026-10-20&top_k=1'), /^public/);
+    assert.match(await cc('/api/stations?q=delhi'), /^public/);
+    assert.match(await cc('/api/schedule/12138'), /^public/);
+    assert.match(await cc('/api/category/vandebharat'), /^public/);
+    for (const p of ['/api/health', '/readyz', '/healthz', '/metrics', '/api/livestatus/12138',
+        '/api/route?from=NDLS', '/api/schedule/abc', '/api/schedule/99999', '/api/category/nope', '/api/nothing-here']) {
+        assert.strictEqual(await cc(p), 'no-store', `${p} must not be cacheable`);
+    }
+});
+
+test('index.html is never cached long-term, hashed assets are immutable', async (t) => {
+    const dist = path.join(ROOT, 'frontend', 'dist');
+    if (!fs.existsSync(dist)) return t.skip('frontend not built');
+    const asset = fs.readdirSync(path.join(dist, 'assets')).find((f) => f.endsWith('.js'));
+    const cc = async (p) => (await fetch(base + p)).headers.get('cache-control');
+    assert.strictEqual(await cc('/'), 'no-cache');
+    assert.strictEqual(await cc('/schedules'), 'no-cache');
+    assert.match(await cc(`/assets/${asset}`), /max-age=31536000.*immutable/);
 });

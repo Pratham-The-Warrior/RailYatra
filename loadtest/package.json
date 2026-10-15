@@ -5,7 +5,9 @@
   "scripts": {
     "route": "node run.js route",
     "mixed": "node run.js mixed",
-    "pareto": "node run.js pareto"
+    "pareto": "node run.js pareto",
+    "test": "node --test test/*.test.js",
+    "aggregate": "node aggregate.js"
   },
   "devDependencies": {
     "autocannon": "8.0.0"

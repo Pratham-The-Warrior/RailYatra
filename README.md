@@ -46,6 +46,10 @@ During expansion, every potential connection is validated for:
 
 ---
 
+## Deployment
+
+Railway with several replicas, a Cloudflare CDN in front, and a one-click distributed load test: see [`DEPLOYMENT.md`](DEPLOYMENT.md).
+
 ## Data
 
 All timetable files are generated and validated by the data pipeline in [`datapipe/`](datapipe/README.md); a weekly GitHub Actions job rebuilds them and opens a reviewable PR when data changes. Do not edit the JSON files by hand (CI checks this).
@@ -58,7 +62,7 @@ A modular monolith with feature modules, shared platform ports and a single comp
 
 See [`docs/CAPACITY.md`](docs/CAPACITY.md) for the measured capacity model (100,000 concurrent users) and [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit and phased plan.
 
-- **Engine pool**: `ENGINE_POOL_SIZE` engine processes (default: CPU cores), least-loaded dispatch, crash isolation and auto-respawn.
+- **Engine pool**: `ENGINE_POOL_SIZE` engine processes (default: min(4, CPU cores)), least-loaded dispatch, crash isolation and auto-respawn.
 - **Caching**: in-process LRU with request coalescing for routes (keyed by weekday), schedules and autocomplete; CDN-friendly `Cache-Control` headers.
 - **Endpoints**: `/healthz` (liveness), `/readyz` (readiness), `/metrics` (Prometheus).
 - **Tests**: `cd backend && npm test` (requires a built engine). CI (`.github/workflows/ci.yml`) also runs a frontend typecheck/build, a load-test gate and a Docker smoke test.
@@ -71,7 +75,7 @@ See [`docs/CAPACITY.md`](docs/CAPACITY.md) for the measured capacity model (100,
 
 | Env var | Default | Purpose |
 |---|---|---|
-| `ENGINE_POOL_SIZE` | CPU cores | Engine processes per instance |
+| `ENGINE_POOL_SIZE` | min(4, CPU cores) | Engine processes per instance (set it explicitly in containers) |
 | `ENGINE_TIMEOUT_MS` | 10000 | Per-request engine timeout |
 | `ENGINE_MAX_QUEUE` | 200 | In-flight requests per engine before shedding with 503 |
 | `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route result cache |

@@ -37,6 +37,14 @@ jobs:
       - name: Validate routing engines against the raw timetable
         run: python3 engine/tests/validate_pareto.py 100 1
 
+      - name: Frontend typecheck and build
+        working-directory: frontend
+        run: |
+          npm ci
+          npx tsc --noEmit -p tsconfig.app.json
+          npm run build
+
+      # Built first so backend tests also verify how the frontend bundle is cached.
       - name: Backend dependencies
         run: npm ci
         working-directory: backend
@@ -44,13 +52,6 @@ jobs:
       - name: Backend integration tests
         run: npm test
         working-directory: backend
-
-      - name: Frontend typecheck and build
-        working-directory: frontend
-        run: |
-          npm ci
-          npx tsc --noEmit -p tsconfig.app.json
-          npm run build
 
       - name: Start server
         working-directory: backend
@@ -66,6 +67,7 @@ jobs:
         working-directory: loadtest
         run: |
           npm ci
+          npm test
           node run.js mixed --connections 50 --duration 15 --max-p99 1000 --json results-ci.json
 
       - name: Upload load-test results

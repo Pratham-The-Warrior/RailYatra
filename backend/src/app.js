@@ -8,8 +8,10 @@ const { HttpError } = require('./platform/errors');
  * Builds the HTTP application from a container (see container.js).
  * Cross-cutting concerns live here; features live in ./modules.
  */
+const OPS_PATHS = new Set(['/healthz', '/readyz', '/metrics']);
+
 function createApp(container, { featureModules = modules } = {}) {
-    const { routing, metrics, log } = container;
+    const { routing, metrics, log, config } = container;
     const app = express();
 
     // Trust the first reverse proxy (load balancer / CDN) for client IPs.
@@ -22,8 +24,15 @@ function createApp(container, { featureModules = modules } = {}) {
             'X-Content-Type-Options': 'nosniff',
             'X-Frame-Options': 'DENY',
             'Referrer-Policy': 'strict-origin-when-cross-origin',
-            'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+            'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+            'X-Instance-Id': config.instanceId
         });
+        // Safe default for CDNs and proxies on dynamic endpoints: not cacheable
+        // unless a handler opts in (successful route/schedule/station/category
+        // responses do). Without it, health checks and error/503 responses could
+        // be cached at the edge. Static files are left alone: express.static only
+        // sets its own long-lived Cache-Control when none is present.
+        if (req.path.startsWith('/api/') || OPS_PATHS.has(req.path)) res.set('Cache-Control', 'no-store');
         if (req.path.startsWith('/api/')) {
             const v = routing.dataVersion();
             if (v) res.set('X-Data-Version', v);
@@ -53,7 +62,10 @@ function createApp(container, { featureModules = modules } = {}) {
     if (fs.existsSync(distPath)) {
         // Hashed assets are immutable; index.html must always revalidate.
         app.use('/assets', express.static(path.join(distPath, 'assets'), { immutable: true, maxAge: '1y' }));
-        app.use(express.static(distPath, { maxAge: '1h' }));
+        // index: false, so "/" falls through to the handler below: index.html must
+        // always revalidate, or after a deploy a cached copy would reference
+        // hashed bundles that no longer exist (blank page until it expires).
+        app.use(express.static(distPath, { maxAge: '1h', index: false }));
         app.use((req, res) => {
             res.set('Cache-Control', 'no-cache');
             res.sendFile(path.join(distPath, 'index.html'));

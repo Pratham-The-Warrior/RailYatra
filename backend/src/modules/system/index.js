@@ -7,11 +7,12 @@ const express = require('express');
  *   /metrics  Prometheus text format
  * plus /api/health for humans and the frontend.
  */
-function createRouter({ routing, metrics }) {
+function createRouter({ config, routing, metrics }) {
     const router = express.Router();
     router.get('/api/health', (req, res) => {
         res.json({
             status: 'ok',
+            instance: config.instanceId,
             uptime: process.uptime(),
             engine: routing.isReady(),
             dataVersion: routing.dataVersion(),

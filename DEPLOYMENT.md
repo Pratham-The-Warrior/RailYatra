@@ -1,77 +1,154 @@
 # RailYatra Deployment Guide
 
-This guide explains how to deploy the RailYatra engine, backend, and frontend.
+How to run RailYatra locally, deploy it to Railway with several replicas, put a
+CDN in front, and prove the deployment handles the target load. Sizing comes
+from `docs/CAPACITY.md`; architecture from `docs/ARCHITECTURE.md`.
 
-## Prerequisites
-- [Docker](https://www.docker.com/products/docker-desktop/) installed on your machine.
-- Node.js (for local development).
+## 1. Local (Docker)
 
-## 1. Local Deployment (Docker)
+The Dockerfile builds everything: the C++ engine, the frontend bundle and the
+backend. No separate frontend build is needed.
 
-The easiest way to run the production build locally is using Docker. This ensures the C++ engine is compiled and everything is matched with the backend correctly.
-
-### Step 1: Build the Frontend
-Ensure you have the latest frontend build:
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-### Step 2: Build the Docker Image
-From the project root:
 ```bash
 docker build -t railyatra .
+docker run -p 3000:3000 -e ENGINE_POOL_SIZE=2 railyatra
 ```
 
-### Step 3: Run the Container
+Open `http://localhost:3000`. `curl localhost:3000/readyz` returns
+`{"status":"ready"}` once an engine has loaded the timetable.
+
+## 2. Railway (recommended host)
+
+`railway.json` in the repository configures the service: the Dockerfile at the
+root is detected automatically, the deploy healthcheck is `/readyz`, the
+restart policy is on-failure, and there are 3 replicas.
+
+### Steps
+
+1. **Create the service.** In Railway: New Project → Deploy from GitHub repo →
+   select this repository. Railway builds the `Dockerfile` and applies
+   `railway.json`.
+2. **Set variables** (service → Variables). `PORT` is set by Railway; do not
+   override it.
+
+   | Variable | Value | Why |
+   |---|---|---|
+   | `ENGINE_POOL_SIZE` | `2` | Containers can report the host's core count; without this the default is capped at 4 |
+   | `LOG_FORMAT` | `json` | One JSON line per log entry; each line includes the replica id |
+   | `ROUTE_CACHE_MAX_MB` | `256` | Route cache memory budget |
+   | `SMALL_CACHE_MAX_MB` | `32` | Schedule and station cache budgets |
+
+3. **Resources.** Give each replica about **2 vCPU and 1 GB memory** if your
+   plan allows; that is the size `docs/CAPACITY.md` measured (~1,900 req/s
+   per replica). Memory use stays under ~510 MB with the default budgets.
+4. **Replicas.** `railway.json` asks for 3 (high availability). Raise the
+   count for more capacity: ~1,140 req/s per replica at a 60% target. Replica
+   limits depend on your Railway plan.
+5. **Deploy and check.** Open `https://<your-service>.up.railway.app/readyz`.
+   To confirm all replicas serve traffic:
+
+   ```bash
+   cd loadtest && npm ci
+   node probe-instances.js https://<your-service>.up.railway.app 60 --min-instances 3
+   ```
+
+### Railway behaviours to know
+
+- **Healthchecks run only at deploy time.** Railway does not keep probing
+  `/readyz` afterwards. RailYatra heals itself: crashed engines restart
+  automatically, and if the process dies Railway's on-failure policy restarts
+  it. For ongoing monitoring, point an uptime checker at `/readyz`.
+- **Traffic is spread across replicas without sticky sessions.** That is fine:
+  instances share no state.
+- **Railway's metrics view is not per replica.** Every response carries an
+  `X-Instance-Id` header and JSON logs include `instance`, so you can tell
+  replicas apart.
+- **Data updates** are deploys: the weekly data-refresh PR (see
+  `datapipe/README.md`), once merged, triggers a new deploy, which Railway rolls
+  out behind the healthcheck.
+
+## 3. CDN in front (Cloudflare, free plan)
+
+Each replica caches in its own memory, so the more replicas you run, the
+colder each cache is. A CDN is the shared cache: popular searches are answered
+at the edge and never reach Railway. The API is built for this:
+
+- successful route, trade-off, schedule, station and category responses send
+  `Cache-Control: public, max-age=…`;
+- health, readiness, metrics, live status and **every error** send
+  `Cache-Control: no-store`, so the edge never caches a failure;
+- hashed frontend assets are `immutable`, and `index.html` is `no-cache`, so a
+  deploy never leaves users with a stale page;
+- route search uses `GET` with the parameters in the URL, so the URL is the
+  cache key.
+
+### Steps
+
+1. Add your domain to Cloudflare and create a **proxied** (orange-cloud) DNS
+   record pointing at the Railway service; add the same custom domain in
+   Railway (service → Settings → Networking).
+2. Cloudflare does not cache JSON by default. Add a **Cache Rule**:
+   - When: hostname equals your domain **and** URI path starts with `/api/`
+   - Then: **Eligible for cache**, with Edge TTL set to **"Use cache-control
+     header if present, bypass cache if not"**, so `no-store` responses and
+     anything without a header are never cached.
+3. Verify: request a route search twice and check the `cf-cache-status`
+   response header goes from `MISS` to `HIT`; `/api/health` must stay
+   `BYPASS` or `DYNAMIC`.
+
+After a timetable update, purge the Cloudflare cache (or wait out the 5-minute
+route TTL) so users see the new data immediately.
+
+## 4. Prove it: distributed load test
+
+`.github/workflows/loadtest.yml` (Actions tab → *Distributed load test* → Run
+workflow; it appears once the file is on the default branch). It:
+
+1. validates the inputs, checks `/readyz`, and verifies at least
+   `min_instances` distinct replicas answer;
+2. starts `runners` GitHub machines that wait for a common start time, then
+   each sends `total_rate / runners` requests per second for `duration`
+   seconds;
+3. combines the results into one pass/fail verdict on the job summary page:
+   p99 upper bound, failure rate, 503 shed rate and status codes.
+
+Suggested ladder against a staging deployment (never production without
+warning):
+
+| Run | total_rate | runners | connections_per_runner | Expect |
+|---|---|---|---|---|
+| 1 | 1000 | 2 | 100 | PASS, baseline |
+| 2 | 3000 | 3 | 200 | PASS with 3 replicas |
+| 3 | 6000 | 6 | 300 | add replicas until it passes |
+| 4 | 10000 | 10 | 300 | the 100k-concurrent-user peak (`docs/CAPACITY.md`) |
+
+Record the replica count at which each step passes; that, not the
+single-machine model, is the real capacity number. Each GitHub runner has
+limited CPU, so if a runner's own p99 is far above the others, add runners
+rather than raising the rate per runner.
+
+## 5. Kubernetes
+
+`deploy/k8s/railyatra.yaml` has the same sizing (2 vCPU, 512Mi request,
+768Mi limit, `ENGINE_POOL_SIZE=2`), readiness and liveness probes, zone
+spreading, a PodDisruptionBudget and an autoscaler (3–100 replicas).
+`deploy/docker-compose.yml` with `deploy/nginx/nginx.conf` runs several
+replicas behind nginx on one host. Neither has been run against a real
+cluster yet; validate them in staging first.
+
+## 6. Without Docker (Linux)
+
 ```bash
-docker run -p 3000:3000 railyatra
-```
-Visit `http://localhost:3000` to use the application.
-
----
-
-## 2. Cloud Deployment
-
-### Recommended Platforms
-- **Railway**: Easiest for Docker-based Node.js apps.
-- **Render**: Supports Docker deployments.
-- **DigitalOcean App Platform**: Excellent for containerized apps.
-
-### General Steps for Cloud
-1.  **Push to GitHub**: Ensure your `Dockerfile`, `backend/`, `frontend/dist/`, `engine/`, `stations.json`, `city_stations.json`, and `master_train_data.json` are all pushed to your repository.
-2.  **Connect to Platform**: Point your cloud provider to your GitHub repo.
-3.  **Automatic Detection**: Most platforms (like Railway or Render) will detect the `Dockerfile` in the root and build it automatically.
-4.  **Environment Variables**: 
-    - `PORT`: Default 3000.
-    - `PDF_BASE_URL`: (Optional) If you are hosting PDFs externally (e.g., S3/R2), set this to the base URL (e.g., `https://storage.railyatra.in/pdfs`). The backend will automatically redirect download requests to this URL.
-
----
-
-## 3. Manual Build (Linux/No Docker)
-
-If you are not using Docker on a Linux server:
-
-### Build the Engine
-**Windows (PowerShell):**
-```powershell
-cd engine
-./build.ps1
+make -C engine                 # builds engine/route_engine (Windows: engine/build.ps1)
+cd frontend && npm ci && npm run build && cd ..
+cd backend && npm ci && ENGINE_POOL_SIZE=2 node server.js
 ```
 
-**Linux/macOS:**
-```bash
-cd engine
-make
-```
+The backend serves `frontend/dist` automatically.
 
-### Setup Backend
-```bash
-cd backend
-npm install
-node server.js
-```
+## Environment variables
 
-### Setup Frontend
-Ensure `frontend/dist` exists. The backend will serve it automatically.
+All variables are validated at startup; an invalid value stops the server with
+a clear message. The full list is in `docs/ARCHITECTURE.md` (Configuration).
+`PDF_BASE_URL` (optional) redirects schedule PDF downloads to external
+storage, e.g. `https://storage.example.com/pdfs`.
