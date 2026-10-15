@@ -134,7 +134,8 @@ void Graph::processTrainData(json& jData) {
         else
             ss.departureMin = -1; // Indicate no departure time.
 
-        ss.dayOfJourney = stop.value("day_of_journey", 1); // Get day of journey, default to 1.
+        ss.dayOfJourney = stop.value("day_of_journey", 1); // Re-derived from times below.
+        ss.depDayOfJourney = ss.dayOfJourney;
         ss.distanceKm   = (int)stop.value("distance_km", 0.0); // Get distance, default to 0.
 
         t.schedule.push_back(ss); // Add the stop to the train's schedule.
@@ -142,6 +143,26 @@ void Graph::processTrainData(json& jData) {
 
     // If the schedule is empty after parsing, this train is invalid.
     if (t.schedule.empty()) return;
+
+    // Derive journey days from the times themselves. Consecutive timetable
+    // events are always < 24h apart, so each step forward in clock time is
+    // unambiguous; the source data's day_of_journey has errors (~2% of trains,
+    // e.g. 11466 lists UJN 23:50 as day 2), which would shift later stops.
+    {
+        int day = 1, last = -1;
+        auto advance = [&](int clock) {
+            if (last >= 0 && clock < last) ++day;
+            last = clock;
+            return day;
+        };
+        for (auto& ss : t.schedule) {
+            int fileDay = ss.dayOfJourney;
+            if (ss.arrivalMin >= 0)   ss.dayOfJourney    = advance(ss.arrivalMin);
+            if (ss.departureMin >= 0) ss.depDayOfJourney = advance(ss.departureMin);
+            if (ss.arrivalMin < 0)    ss.dayOfJourney    = ss.departureMin >= 0 ? ss.depDayOfJourney : fileDay;
+            if (ss.departureMin < 0)  ss.depDayOfJourney = ss.dayOfJourney;
+        }
+    }
 
     // Populate stationToTrains mapping: for each stop, add the train's ID to the station's list.
     for (auto& ss : t.schedule) {

@@ -186,7 +186,7 @@ static std::vector<RouteResult> runDijkstraPass(
                     continue;
 
                 // Check if this train actually runs on the query day.
-                int daysSinceStart  = stop.dayOfJourney - 1;
+                int daysSinceStart  = stop.depDayOfJourney - 1;
                 int trainStartWkDay = ((queryDayOfWeek - daysSinceStart) % 7 + 7) % 7;
                 if (!t.operatingDays[trainStartWkDay])
                     continue;
@@ -197,7 +197,7 @@ static std::vector<RouteResult> runDijkstraPass(
                     const auto& dest = t.schedule[sj];
                     if (dest.arrivalMin < 0) continue;
 
-                    int arrAbs = (dest.dayOfJourney - stop.dayOfJourney) * 1440
+                    int arrAbs = (dest.dayOfJourney - stop.depDayOfJourney) * 1440
                                + dest.arrivalMin;
                     if (arrAbs <= depAbs) {
                         arrAbs = depAbs + (dest.arrivalMin - stop.departureMin);
@@ -288,7 +288,7 @@ static std::vector<RouteResult> runDijkstraPass(
                     if (waitTime < 30)         continue;
                     if (waitTime > maxWaitMin) break;
 
-                    int daysSinceTrainStart  = stop.dayOfJourney - 1;
+                    int daysSinceTrainStart  = stop.depDayOfJourney - 1;
                     int absoluteTrainStartDay = checkDay - daysSinceTrainStart;
                     int trainStartWkDay = ((queryDayOfWeek + absoluteTrainStartDay) % 7 + 7) % 7;
                     if (!nextTrain.operatingDays[trainStartWkDay])
@@ -299,11 +299,11 @@ static std::vector<RouteResult> runDijkstraPass(
                         if (dest.arrivalMin < 0) continue;
 
                         int depAbs = potentialDepAbs;
-                        int arrAbs = (dest.dayOfJourney - stop.dayOfJourney) * 1440
+                        int arrAbs = (dest.dayOfJourney - stop.depDayOfJourney) * 1440
                                    + dest.arrivalMin
                                    + checkDay * 1440;
                         if (arrAbs <= depAbs) {
-                            arrAbs = depAbs + ((dest.dayOfJourney - stop.dayOfJourney) * 1440
+                            arrAbs = depAbs + ((dest.dayOfJourney - stop.depDayOfJourney) * 1440
                                      + dest.arrivalMin - stop.departureMin);
                             if (arrAbs <= depAbs) arrAbs += 1440;
                         }
