@@ -33,11 +33,11 @@ special trains, availability) is ever added, the key must include the date again
 ## 2. Phase 1: Shipped and load-tested (this change)
 
 **Changes**
-- **Engine pool** (`backend/src/services/engine.service.js`): N engine processes (default = CPU
+- **Engine pool** (now `backend/src/platform/routing/enginePool.js`): N engine processes (default = CPU
   cores, ~55 MB each), least-in-flight dispatch, UUID request IDs, per-worker bounded queue
   (load shedding with 503 instead of unbounded latency), immediate failure of in-flight requests on
   crash, exponential-backoff respawn, spawn-error handling.
-- **Caching** (`backend/src/services/cache.js`): LRU + TTL with **request coalescing**
+- **Caching** (now `backend/src/platform/cache.js`): LRU + TTL with **request coalescing**
   (concurrent identical misses share one engine call). Applied to route (keyed by weekday),
   schedule, and station autocomplete. Categories are pre-parsed once at startup.
   `Cache-Control` headers make every GET (and the idempotent route POST) CDN-cacheable.

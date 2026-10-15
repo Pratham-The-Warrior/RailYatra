@@ -1,14 +1,15 @@
 const metrics = require('./metrics');
 
-// Every cache registers itself so a timetable reload can invalidate them all.
-const registry = new Set();
-
 /**
- * In-process LRU cache with TTL and request coalescing.
+ * In-process LRU cache with TTL and request coalescing (the CachePort).
  *
  * Train timetables change rarely, so route/schedule results are highly
  * cacheable. `getOrCompute` also coalesces concurrent identical misses into a
- * single engine call (prevents a thundering herd on popular routes).
+ * single computation (prevents a thundering herd on popular routes).
+ *
+ * A shared store (e.g. Redis) can implement the same three methods
+ * (get, set, getOrCompute, clear) and be returned by CacheRegistry.create
+ * without changing any feature module.
  */
 class LruCache {
     constructor({ name, maxEntries = 10000, ttlMs = 10 * 60 * 1000 }) {
@@ -20,7 +21,6 @@ class LruCache {
         // Bumped by clear(); a computation that started under an older
         // generation must not write its (stale) result into the cache.
         this.generation = 0;
-        registry.add(this);
     }
 
     clear() {
@@ -43,6 +43,7 @@ class LruCache {
     }
 
     set(key, value) {
+        if (this.maxEntries <= 0) return;
         if (this.map.has(key)) this.map.delete(key);
         this.map.set(key, { value, expires: Date.now() + this.ttlMs });
         while (this.map.size > this.maxEntries) {
@@ -81,8 +82,26 @@ class LruCache {
     get size() { return this.map.size; }
 }
 
-function clearAll() {
-    for (const c of registry) c.clear();
+/** Owns every cache of one application instance so a data reload can clear them all. */
+class CacheRegistry {
+    constructor() {
+        this.caches = new Map();
+    }
+
+    create(options) {
+        if (this.caches.has(options.name)) throw new Error(`Cache "${options.name}" already exists`);
+        const cache = new LruCache(options);
+        this.caches.set(options.name, cache);
+        return cache;
+    }
+
+    get(name) {
+        return this.caches.get(name);
+    }
+
+    clearAll() {
+        for (const cache of this.caches.values()) cache.clear();
+    }
 }
 
-module.exports = { LruCache, clearAll };
+module.exports = { LruCache, CacheRegistry };

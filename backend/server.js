@@ -1,21 +1,19 @@
 /**
- * server.js
- *
- * Entry point for the RailYatra backend server.
- * Imports the configured app and starts background services.
+ * Process entry point: build the container, start engines, serve HTTP,
+ * handle signals. All wiring lives in src/container.js and src/app.js.
  */
+const { createContainer } = require('./src/container');
+const { createApp } = require('./src/app');
 
-const app = require('./src/app');
-const config = require('./src/config');
-const engine = require('./src/services/engine.service');
-const log = require('./src/services/logger');
+const container = createContainer();
+const { config, log } = container;
 
-// Start the engine pool before accepting traffic; /readyz reports 503 until
-// at least one worker has loaded the timetable.
-engine.spawnEngine();
+// Engines start before traffic; /readyz reports 503 until one is ready.
+container.start();
+const app = createApp(container);
 
 const server = app.listen(config.port, () => {
-    log.info('server listening', { port: Number(config.port), enginePool: config.enginePoolSize });
+    log.info('server listening', { port: config.port, enginePool: config.enginePoolSize });
 });
 
 // Keep-alive must outlive the load balancer's idle timeout to avoid 502s.
@@ -28,19 +26,19 @@ function shutdown(signal) {
     if (stopping) return;
     stopping = true;
     log.info('shutdown requested, draining', { signal });
-    server.close(() => {
-        engine.shutdown();
-        log.info('shutdown complete');
-        process.exit(0);
+    server.close(async () => {
+        const clean = await container.shutdown();
+        log.info('shutdown complete', { enginesStopped: clean });
+        process.exit(clean ? 0 : 1);
     });
     setTimeout(() => process.exit(1), 15000).unref();
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
-// Zero-downtime timetable reload: replace master_train_data.json, then `kill -HUP <pid>`.
+// Zero-downtime data reload: publish new data (python3 -m datapipe publish), then `kill -HUP <pid>`.
 process.on('SIGHUP', () => {
-    engine.reload()
+    container.reloadData()
         .then((version) => log.info('timetable reloaded via SIGHUP', { version }))
         .catch((e) => log.error('timetable reload failed', { err: e.message }));
 });
-process.on('SIGINT', () => shutdown('SIGINT'));
