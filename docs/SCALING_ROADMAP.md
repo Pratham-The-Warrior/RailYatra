@@ -187,6 +187,13 @@ and the load generator competes for CPU. Compare uniform-traffic numbers only ac
 runs.
 
 ### Phase 4: Data platform and product features
+**Progress (shipped):** the ingestion pipeline is built, as `datapipe/`. It handles sources in
+priority order (the current JSON and any GTFS feed), validates and repairs data, gates on diffs,
+publishes atomically, and runs a weekly refresh PR, all backed by tests and a CI data check. See
+`datapipe/README.md` for the source research and the first-run findings. The blocker for complete,
+current data is now **a licensed source**, not code. Postgres as source of truth (item 1) is
+deferred: the versioned JSON plus manifest is sufficient until user data exists.
+
 1. **Source of truth**: PostgreSQL (+PostGIS for station geography) for timetables, stations,
    cities, and user data; ingestion pipeline with validation (no negative distances, monotonic
    times, known stations) that emits the engine artifact. The query path stays in-memory; the DB is

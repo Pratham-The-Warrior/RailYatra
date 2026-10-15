@@ -1,0 +1,36 @@
+{
+  "fetch": {
+    "user_agent": "RailYatraDataPipeline/1.0 (+https://github.com/Pratham-The-Warrior/RailYatra)",
+    "cache_dir": ".datapipe-cache",
+    "min_interval_s": 2.0
+  },
+  "sources": [
+    {
+      "name": "railyatra-master",
+      "adapter": "railyatra_json",
+      "path": "master_train_data.json",
+      "enabled": true,
+      "_comment": "Current curated data. Keep as the lowest-priority source once a licensed feed is added below it in priority."
+    },
+    {
+      "name": "licensed-gtfs-example",
+      "adapter": "gtfs",
+      "url": "https://example.com/indian-railways/gtfs.zip",
+      "distance_unit": "km",
+      "default_type": "EXPRESS",
+      "robots": "respect",
+      "enabled": false,
+      "_comment": "Template: point at a GTFS feed you are licensed to use, move it ABOVE railyatra-master to give it priority, and enable it."
+    }
+  ],
+  "output": {
+    "trains": "master_train_data.json",
+    "stations": "stations.json",
+    "manifest": "data/manifest.json"
+  },
+  "categories": [
+    { "file": "master_train_data_vandebharat.json", "type": "VANDE BHARAT" }
+  ],
+  "coverage": { "city_stations": "city_stations.json" },
+  "publish_gate": { "min_trains": 1500, "max_removed_pct": 5 }
+}

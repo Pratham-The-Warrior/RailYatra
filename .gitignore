@@ -54,3 +54,6 @@ backend/src/scripts/__pycache__/
 # Linux engine binary
 engine/route_engine
 loadtest/node_modules
+
+.datapipe-cache/
+data-report.md

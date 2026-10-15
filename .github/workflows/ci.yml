@@ -26,6 +26,11 @@ jobs:
             frontend/package-lock.json
             loadtest/package-lock.json
 
+      - name: Data pipeline tests and data check
+        run: |
+          python3 -m unittest discover -s datapipe/tests -t .
+          python3 -m datapipe check
+
       - name: Build engine
         run: make -C engine -j"$(nproc)"
 

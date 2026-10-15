@@ -46,6 +46,10 @@ During expansion, every potential connection is validated for:
 
 ---
 
+## Data
+
+All timetable files are generated and validated by the data pipeline in [`datapipe/`](datapipe/README.md); a weekly GitHub Actions job rebuilds them and opens a reviewable PR when data changes. Do not edit the JSON files by hand (CI checks this).
+
 ## Scalability & Operations
 
 See [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit, capacity model, phased plan and load-test results.

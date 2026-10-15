@@ -24,7 +24,7 @@
             },
             {
                 "arrival_time": "15:15",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": null,
                 "distance_km": 1914,
                 "platform": null,
@@ -6151,7 +6151,7 @@
             },
             {
                 "arrival_time": "15:35",
-                "day_of_journey": 5,
+                "day_of_journey": 2,
                 "departure_time": "08:00",
                 "distance_km": 2318,
                 "platform": null,
@@ -6161,7 +6161,7 @@
             },
             {
                 "arrival_time": "13:30",
-                "day_of_journey": 5,
+                "day_of_journey": 3,
                 "departure_time": "21:00",
                 "distance_km": 2544,
                 "platform": null,
@@ -6171,7 +6171,7 @@
             },
             {
                 "arrival_time": "08:10",
-                "day_of_journey": 6,
+                "day_of_journey": 4,
                 "departure_time": null,
                 "distance_km": 2990,
                 "platform": null,
@@ -8254,7 +8254,7 @@
             },
             {
                 "arrival_time": "23:45",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 32,
                 "platform": null,
@@ -15282,7 +15282,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 794,
                 "platform": null,
@@ -21213,7 +21213,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 971,
                 "platform": null,
@@ -37341,7 +37341,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 228,
                 "platform": null,
@@ -43450,7 +43450,7 @@
             },
             {
                 "arrival_time": "23:50",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": null,
                 "distance_km": 523,
                 "platform": null,
@@ -44470,7 +44470,7 @@
             },
             {
                 "arrival_time": "23:50",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": null,
                 "distance_km": 676,
                 "platform": null,
@@ -79062,7 +79062,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": "00:05",
                 "distance_km": 1501,
                 "platform": null,
@@ -104354,7 +104354,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": null,
                 "distance_km": 378,
                 "platform": null,
@@ -138526,7 +138526,7 @@
             },
             {
                 "arrival_time": "23:58",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:03",
                 "distance_km": 439,
                 "platform": null,
@@ -162861,7 +162861,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:02",
                 "distance_km": 313,
                 "platform": null,
@@ -169803,7 +169803,7 @@
             },
             {
                 "arrival_time": "23:45",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:10",
                 "distance_km": 407,
                 "platform": null,
@@ -189815,7 +189815,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": "00:05",
                 "distance_km": 1679,
                 "platform": null,
@@ -190210,7 +190210,7 @@
             },
             {
                 "arrival_time": "23:58",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": "00:03",
                 "distance_km": 1533,
                 "platform": null,
@@ -206357,7 +206357,7 @@
             },
             {
                 "arrival_time": "23:57",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:02",
                 "distance_km": 155,
                 "platform": null,
@@ -233049,7 +233049,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": null,
                 "distance_km": 79,
                 "platform": null,
@@ -241450,7 +241450,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:03",
                 "distance_km": 336,
                 "platform": null,
@@ -255563,7 +255563,7 @@
             },
             {
                 "arrival_time": "23:45",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:40",
                 "distance_km": 116,
                 "platform": null,
@@ -274944,7 +274944,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 171,
                 "platform": null,
@@ -283716,7 +283716,7 @@
             },
             {
                 "arrival_time": "23:59",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": "00:01",
                 "distance_km": 1765,
                 "platform": null,
@@ -286615,7 +286615,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 181,
                 "platform": null,
@@ -335626,7 +335626,7 @@
             },
             {
                 "arrival_time": "23:45",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 373,
                 "platform": null,
@@ -341276,7 +341276,7 @@
             },
             {
                 "arrival_time": "23:45",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 373,
                 "platform": null,
@@ -341690,7 +341690,7 @@
             },
             {
                 "arrival_time": "23:45",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 373,
                 "platform": null,
@@ -361858,7 +361858,7 @@
             },
             {
                 "arrival_time": "23:59",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:01",
                 "distance_km": 104,
                 "platform": null,
@@ -364178,7 +364178,7 @@
             },
             {
                 "arrival_time": "23:58",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": null,
                 "distance_km": 1552,
                 "platform": null,
@@ -375760,7 +375760,7 @@
             },
             {
                 "arrival_time": "23:58",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": null,
                 "distance_km": 1828,
                 "platform": null,
@@ -406735,7 +406735,7 @@
             },
             {
                 "arrival_time": "23:58",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": null,
                 "distance_km": 206,
                 "platform": null,
@@ -448759,7 +448759,7 @@
             },
             {
                 "arrival_time": "23:58",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:03",
                 "distance_km": 431,
                 "platform": null,
@@ -449134,7 +449134,7 @@
             },
             {
                 "arrival_time": "23:45",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 83,
                 "platform": null,
@@ -461997,7 +461997,7 @@
             },
             {
                 "arrival_time": "23:58",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:03",
                 "distance_km": 801,
                 "platform": null,
@@ -463689,7 +463689,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 473,
                 "platform": null,
@@ -472758,7 +472758,7 @@
             },
             {
                 "arrival_time": "23:59",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": null,
                 "distance_km": 25,
                 "platform": null,
@@ -473406,7 +473406,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 2,
+                "day_of_journey": 1,
                 "departure_time": "00:05",
                 "distance_km": 184,
                 "platform": null,
@@ -479601,7 +479601,7 @@
                 "distance_km": 173,
                 "platform": null,
                 "sequence_number": 3,
-                "station_code": "07",
+                "station_code": "JALNA",
                 "station_name": "JALNA"
             },
             {
@@ -479771,7 +479771,7 @@
                 "distance_km": 436,
                 "platform": null,
                 "sequence_number": 8,
-                "station_code": "19",
+                "station_code": "JALNA",
                 "station_name": "JALNA"
             },
             {
@@ -480031,7 +480031,7 @@
                 "distance_km": 115,
                 "platform": null,
                 "sequence_number": 2,
-                "station_code": "08",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -480071,7 +480071,7 @@
                 "distance_km": 287,
                 "platform": null,
                 "sequence_number": 6,
-                "station_code": "10",
+                "station_code": "G",
                 "station_name": "GONDIA JN"
             },
             {
@@ -480121,7 +480121,7 @@
                 "distance_km": 130,
                 "platform": null,
                 "sequence_number": 2,
-                "station_code": "15",
+                "station_code": "G",
                 "station_name": "GONDIA JN"
             },
             {
@@ -480161,7 +480161,7 @@
                 "distance_km": 302,
                 "platform": null,
                 "sequence_number": 6,
-                "station_code": "17",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -480626,7 +480626,7 @@
                 "distance_km": 115,
                 "platform": null,
                 "sequence_number": 3,
-                "station_code": "20",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -480666,7 +480666,7 @@
                 "distance_km": 288,
                 "platform": null,
                 "sequence_number": 7,
-                "station_code": "23",
+                "station_code": "G",
                 "station_name": "GONDIA JN"
             },
             {
@@ -481281,7 +481281,7 @@
                 "distance_km": 1539,
                 "platform": null,
                 "sequence_number": 30,
-                "station_code": "04",
+                "station_code": "G",
                 "station_name": "GONDIA JN"
             },
             {
@@ -481321,7 +481321,7 @@
                 "distance_km": 1710,
                 "platform": null,
                 "sequence_number": 34,
-                "station_code": "08",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -481396,7 +481396,7 @@
                 "distance_km": 115,
                 "platform": null,
                 "sequence_number": 3,
-                "station_code": "20",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -481436,7 +481436,7 @@
                 "distance_km": 288,
                 "platform": null,
                 "sequence_number": 7,
-                "station_code": "23",
+                "station_code": "G",
                 "station_name": "GONDIA JN"
             },
             {
@@ -482011,7 +482011,7 @@
                 "distance_km": 1603,
                 "platform": null,
                 "sequence_number": 28,
-                "station_code": "04",
+                "station_code": "G",
                 "station_name": "GONDIA JN"
             },
             {
@@ -482051,7 +482051,7 @@
                 "distance_km": 1775,
                 "platform": null,
                 "sequence_number": 32,
-                "station_code": "08",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -482116,7 +482116,7 @@
                 "distance_km": 36,
                 "platform": null,
                 "sequence_number": 2,
-                "station_code": "11",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -482581,7 +482581,7 @@
                 "distance_km": 1872,
                 "platform": null,
                 "sequence_number": 22,
-                "station_code": "08",
+                "station_code": "R",
                 "station_name": "RAIPUR JN"
             },
             {
@@ -486954,7 +486954,7 @@
             },
             {
                 "arrival_time": "23:55",
-                "day_of_journey": 3,
+                "day_of_journey": 2,
                 "departure_time": "00:05",
                 "distance_km": 1502,
                 "platform": null,

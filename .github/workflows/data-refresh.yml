@@ -1,0 +1,76 @@
+name: Data refresh
+
+# Rebuilds the timetable from every enabled source in datapipe/sources.json,
+# validates it end to end, and opens a pull request with the data report when
+# anything changed. Nothing reaches users until a person merges that PR.
+#
+# One-time repo setting: Settings -> Actions -> General -> "Allow GitHub Actions
+# to create and approve pull requests". PRs opened with GITHUB_TOKEN do not
+# trigger other workflows, so every check CI would run happens here first.
+
+on:
+  schedule:
+    - cron: "17 2 * * 1"   # Mondays 02:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore fetch cache (ETag / Last-Modified revalidation)
+        uses: actions/cache@v4
+        with:
+          path: .datapipe-cache
+          key: datapipe-cache-${{ github.run_id }}
+          restore-keys: datapipe-cache-
+
+      - name: Rebuild and publish locally (gate enforced)
+        id: publish
+        run: |
+          python3 -m datapipe publish --report data-report.md
+          if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; else echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Validate new data (engine validator + backend tests)
+        if: steps.publish.outputs.changed == 'true'
+        run: |
+          make -C engine -j"$(nproc)"
+          python3 engine/tests/validate_pareto.py 150 1
+          cd backend && npm ci && npm test
+
+      - name: Open pull request with the data report
+        if: steps.publish.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: data/refresh
+          delete-branch: true
+          commit-message: "data: scheduled timetable refresh"
+          title: "Data refresh: timetable update"
+          body-path: data-report.md
+          add-paths: |
+            master_train_data.json
+            master_train_data_vandebharat.json
+            stations.json
+            data/manifest.json
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-report
+          path: data-report.md
+          if-no-files-found: ignore
