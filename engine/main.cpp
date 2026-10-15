@@ -1,10 +1,10 @@
 #include <iostream>
 #include <string>
 #include <chrono>
-#include <algorithm>
 #include "graph.hpp"
 #include "dijkstra.hpp"
 #include "trip_router.hpp"
+#include "handlers.hpp"
 #include "json.hpp"
 
 using json = nlohmann::json;
@@ -45,6 +45,9 @@ int main(int argc, char* argv[]) {
     // ── Interactive request loop ────────────────────────────
     DijkstraSolver solver(graph);
     TripRouter tripRouter(graph);   // precomputes normalized timetables once
+    HandlerContext ctx{graph, solver, tripRouter};
+    const auto handlers = makeHandlerRegistry();
+    const Handler& defaultHandler = handlers.at("route");
 
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -56,216 +59,25 @@ int main(int argc, char* argv[]) {
             json req = json::parse(line);
             std::string reqId = req.value("request_id", "0");
             std::string type  = req.value("type", "route");
+            auto it = handlers.find(type);
+            const Handler& handler = (it != handlers.end()) ? it->second : defaultHandler;
 
-            if (type == "schedule") {
-                if (!req.contains("train_number")) {
-                    throw std::runtime_error("Missing required field: train_number for schedule request");
-                }
-                std::string tNum = req["train_number"].get<std::string>();
-                std::string schedStr = graph.getTrainSchedule(tNum);
-                json sched = json::parse(schedStr);
-                
-                json response;
+            try {
+                HandlerResult result = handler(req, reqId, ctx);
+                std::chrono::duration<double, std::milli> elapsed =
+                    std::chrono::high_resolution_clock::now() - startTime;
+
+                json response = std::move(result.body);
                 response["request_id"] = reqId;
-                response["type"] = "schedule";
-                response["results"] = sched;
-                
-                auto endTime = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double, std::milli> elapsed = endTime - startTime;
-                response["elapsed_ms"] = elapsed.count();
-                
-                std::cout << response.dump() << std::endl;
-                std::cerr << "Schedule Request [" << reqId << "] for train " << tNum << " in " << elapsed.count() << "ms." << std::endl;
-                continue;
-            }
-
-            // ── Pareto Request: earliest arrival per transfer count ──
-            if (type == "pareto") {
-                if (!req.contains("from") || !req.contains("to") || !req.contains("date")) {
-                    throw std::runtime_error("Missing required fields: from, to, date for pareto request");
-                }
-                auto toList = [](const json& v) {
-                    std::vector<std::string> out;
-                    if (v.is_array()) for (auto& c : v) out.push_back(c.get<std::string>());
-                    else out.push_back(v.get<std::string>());
-                    return out;
-                };
-                std::vector<std::string> fromCodes = toList(req["from"]);
-                std::vector<std::string> toCodes   = toList(req["to"]);
-                std::string date = req["date"].get<std::string>();
-                int maxSwitches = req.value("max_switches", 4);
-                int maxWait     = req.value("max_wait", 600);
-
-                // Same validation semantics as the classic route request.
-                auto known = [&](const std::vector<std::string>& codes, std::vector<std::string>& out) {
-                    for (auto c : codes) {
-                        for (auto& ch : c) ch = (char)toupper((unsigned char)ch);
-                        if (graph.getStationId(c) != -1) out.push_back(c);
-                    }
-                };
-                std::vector<std::string> knownFrom, knownTo;
-                known(fromCodes, knownFrom);
-                known(toCodes, knownTo);
-                std::string validationError;
-                if (knownFrom.empty()) validationError = "Unknown source station: " + (fromCodes.empty() ? std::string() : fromCodes[0]);
-                else if (knownTo.empty()) validationError = "Unknown destination station: " + (toCodes.empty() ? std::string() : toCodes[0]);
-                else {
-                    bool allSame = true;
-                    for (const auto& f : knownFrom)
-                        if (std::find(knownTo.begin(), knownTo.end(), f) == knownTo.end()) { allSame = false; break; }
-                    if (allSame) validationError = "Source and destination stations cannot be the same.";
-                }
-                if (!validationError.empty()) {
-                    json err;
-                    err["request_id"] = reqId;
-                    err["error"] = validationError;
-                    std::cout << err.dump() << std::endl;
-                    continue;
-                }
-
-                auto results = tripRouter.paretoRoutes(knownFrom, knownTo, date, maxSwitches, maxWait);
-
-                auto endTime = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double, std::milli> elapsed = endTime - startTime;
-
-                json response;
-                response["request_id"] = reqId;
-                response["results"]    = DijkstraSolver::toJson(results);
                 response["elapsed_ms"] = elapsed.count();
                 std::cout << response.dump() << std::endl;
-
-                std::cerr << "Pareto [" << reqId << "] " << fromCodes.size() << " sources -> "
-                          << toCodes.size() << " dests in " << elapsed.count() << "ms. Found "
-                          << results.size() << " routes." << std::endl;
-                continue;
-            }
-
-            // ── Multi-Route Request (All Stations) ──────────────────
-            if (type == "multi_route") {
-                if (!req.contains("from") || !req.contains("to") || !req.contains("date")) {
-                    throw std::runtime_error("Missing required fields: from, to, date for multi_route request");
-                }
-
-                // Parse from/to as arrays of station codes
-                std::vector<std::string> fromCodes;
-                std::vector<std::string> toCodes;
-
-                if (req["from"].is_array()) {
-                    for (auto& code : req["from"])
-                        fromCodes.push_back(code.get<std::string>());
-                } else {
-                    fromCodes.push_back(req["from"].get<std::string>());
-                }
-
-                if (req["to"].is_array()) {
-                    for (auto& code : req["to"])
-                        toCodes.push_back(code.get<std::string>());
-                } else {
-                    toCodes.push_back(req["to"].get<std::string>());
-                }
-
-                std::string date = req["date"].get<std::string>();
-                int maxSwitches = req.value("max_switches", 4);
-                int maxWait     = req.value("max_wait", 600);
-                int topK        = req.value("top_k", 10);
-
-                SortMode sortMode = SortMode::TIME;
-                if (req.contains("sort_by")) {
-                    std::string sb = req["sort_by"].get<std::string>();
-                    if (sb == "distance") sortMode = SortMode::DISTANCE;
-                    else if (sb == "switches") sortMode = SortMode::SWITCHES;
-                }
-
-                auto results = solver.findRoutesMulti(
-                    fromCodes, toCodes, date, maxSwitches, maxWait, topK, sortMode);
-
-                auto endTime = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double, std::milli> elapsed = endTime - startTime;
-
-                json response;
-                response["request_id"] = reqId;
-                response["results"]    = DijkstraSolver::toJson(results);
-                response["elapsed_ms"] = elapsed.count();
-
-                std::cout << response.dump() << std::endl;
-
-                std::cerr << "MultiRoute [" << reqId << "] "
-                          << fromCodes.size() << " sources -> " << toCodes.size() << " dests"
-                          << " in " << elapsed.count() << "ms. Found "
-                          << results.size() << " routes." << std::endl;
-                continue;
-            }
-
-            // ── Standard Route Request ──────────────────────────
-            // Validate required fields
-            if (!req.contains("from") || !req.contains("to") || !req.contains("date")) {
-                throw std::runtime_error("Missing required fields: from, to, date");
-            }
-
-            std::string from = req["from"].get<std::string>();
-            std::string to   = req["to"].get<std::string>();
-            std::string date = req["date"].get<std::string>();
-
-            // Validate from != to
-            std::string fromUpper = from, toUpper = to;
-            for (auto& c : fromUpper) c = (char)toupper((unsigned char)c);
-            for (auto& c : toUpper)   c = (char)toupper((unsigned char)c);
-
-            if (fromUpper == toUpper) {
+                std::cerr << result.logPrefix << " in " << elapsed.count() << "ms" << result.logSuffix << std::endl;
+            } catch (const RequestError& e) {
                 json err;
                 err["request_id"] = reqId;
-                err["error"] = "Source and destination stations cannot be the same.";
+                err["error"] = e.what();
                 std::cout << err.dump() << std::endl;
-                continue;
             }
-
-            // Validate stations exist
-            if (graph.getStationId(fromUpper) == -1) {
-                json err;
-                err["request_id"] = reqId;
-                err["error"] = "Unknown source station: " + fromUpper;
-                std::cout << err.dump() << std::endl;
-                continue;
-            }
-            if (graph.getStationId(toUpper) == -1) {
-                json err;
-                err["request_id"] = reqId;
-                err["error"] = "Unknown destination station: " + toUpper;
-                std::cout << err.dump() << std::endl;
-                continue;
-            }
-
-            int maxSwitches = req.value("max_switches", 4);
-            int maxWait     = req.value("max_wait", 600);
-            int topK        = req.value("top_k", 10);
-
-            // Sort mode
-            SortMode sortMode = SortMode::TIME;
-            if (req.contains("sort_by")) {
-                std::string sb = req["sort_by"].get<std::string>();
-                if (sb == "distance") sortMode = SortMode::DISTANCE;
-                else if (sb == "switches") sortMode = SortMode::SWITCHES;
-            }
-
-            // Run Dijkstra
-            auto results = solver.findRoutes(
-                from, to, date, maxSwitches, maxWait, topK, sortMode);
-
-            auto endTime = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> elapsed = endTime - startTime;
-
-            // Build response
-            json response;
-            response["request_id"] = reqId;
-            response["results"]    = DijkstraSolver::toJson(results);
-            response["elapsed_ms"] = elapsed.count();
-
-            std::cout << response.dump() << std::endl;
-
-            std::cerr << "Request [" << reqId << "] " << from << " -> " << to
-                      << " in " << elapsed.count() << "ms. Found "
-                      << results.size() << " routes." << std::endl;
-
         } catch (const std::exception& e) {
             json err;
             try {
