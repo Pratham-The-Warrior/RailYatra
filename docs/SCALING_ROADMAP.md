@@ -240,6 +240,12 @@ so engineering investment compounds.
 
 ## 6. Known remaining issues (tracked, not fixed here)
 
+- Frontend build tooling: `npm audit` reports 7 findings (5 high) in Tailwind CSS v3's transitive
+  file-matching dependencies (braces, micromatch, chokidar, …). They run only at build time on our
+  own source files and never ship to browsers. The fix is a Tailwind 4 migration (a major version with
+  config and class changes) and should be done as its own reviewed change. The backend has
+  0 vulnerabilities (`npm audit`), and in-range fixes are applied to both packages.
+
 - Live Status: the endpoint now returns an explicit 503 "temporarily unavailable" message, which
   the page displays. A real implementation needs a licensed data source (feature #7).
 - ✅ Removed the unused 5k-line `fareCalculator.ts` and the Windows-only `tests/test_engine.js`.
