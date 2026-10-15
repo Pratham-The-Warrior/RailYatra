@@ -11,5 +11,8 @@
   },
   "devDependencies": {
     "autocannon": "8.0.0"
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }
