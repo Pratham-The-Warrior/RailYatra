@@ -905,6 +905,9 @@
           "status": {
             "const": "ok"
           },
+          "instance": {
+            "type": "string"
+          },
           "uptime": {
             "type": "number"
           },
@@ -953,6 +956,7 @@
         },
         "required": [
           "status",
+          "instance",
           "uptime",
           "engine",
           "dataVersion",

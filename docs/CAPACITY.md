@@ -99,6 +99,10 @@ prices; spot and savings plans cut this substantially.
 
 ## 6. Validating in staging (before claiming the number)
 
+Automated: `.github/workflows/loadtest.yml` runs this as a button-press distributed
+test with a combined pass/fail verdict; see `DEPLOYMENT.md` section 4 for the ladder.
+The manual steps below describe what it does.
+
 1. Deploy `deploy/k8s/railyatra.yaml` with 3 replicas behind the ingress.
 2. From 2–3 separate load machines run
    `node loadtest/run.js mixed --url https://<staging> --connections 2000 --rate <per-machine share> --duration 300`.

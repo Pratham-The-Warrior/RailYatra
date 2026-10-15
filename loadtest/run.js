@@ -3,14 +3,16 @@
  *
  * Usage: node run.js <scenario> [--url http://localhost:3000] [--connections 100]
  *                    [--duration 20] [--zipf 1.1] [--json out.json]
- *                    [--max-p99 <ms>] [--min-rps <n>] [--rate <total req/s>]
+ *                    [--max-p99 <ms>] [--min-rps <n>] [--rate <total req/s>] [--no-gate]
  *
  * --rate caps the total request rate across all connections, which models
  * many mostly-idle users (high --connections, realistic --rate) rather than
  * a few connections hammering the server.
  *
  * Exits non-zero if any request errors, any non-2xx response, or a threshold
- * is violated, so it can be used as a CI performance gate.
+ * is violated, so it can be used as a CI performance gate. --no-gate always
+ * exits 0 after writing --json (used by distributed runs, where the combined
+ * result is judged by aggregate.js).
  *
  * Scenarios
  *   route  – POST /api/route only, random station pairs and dates (cache-hostile
@@ -21,8 +23,11 @@
  */
 const autocannon = require('autocannon');
 
+const FLAGS = new Set(['no-gate']);   // options without a value
 const args = Object.fromEntries(process.argv.slice(3).reduce((acc, a, i, arr) => {
-    if (a.startsWith('--')) acc.push([a.slice(2), arr[i + 1]]);
+    if (!a.startsWith('--')) return acc;
+    const name = a.slice(2);
+    acc.push([name, FLAGS.has(name) ? true : arr[i + 1]]);
     return acc;
 }, []));
 const scenario = process.argv[2] || 'route';
@@ -97,11 +102,13 @@ const instance = autocannon({
         rps_avg: res.requests.average, rps_p50: res.requests.p50,
         latency_p50_ms: res.latency.p50, latency_p90_ms: res.latency.p90,
         latency_p99_ms: res.latency.p99, latency_max_ms: res.latency.max,
-        total: res.requests.total, non2xx: res.non2xx, errors: res.errors, timeouts: res.timeouts
+        total: res.requests.total, non2xx: res.non2xx, errors: res.errors, timeouts: res.timeouts,
+        status_codes: Object.fromEntries(Object.entries(res.statusCodeStats || {}).map(([code, v]) => [code, v.count]))
     };
     console.log(JSON.stringify(summary, null, 2));
     if (args.json) require('fs').writeFileSync(args.json, JSON.stringify(summary, null, 2));
 
+    if (args['no-gate']) return;
     const failures = [];
     if (res.errors || res.timeouts) failures.push(`${res.errors} errors, ${res.timeouts} timeouts`);
     if (res.non2xx) failures.push(`${res.non2xx} non-2xx responses`);

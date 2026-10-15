@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
 
@@ -34,8 +35,13 @@ function loadConfig(env = process.env) {
         pdfBaseUrl: env.PDF_BASE_URL || null,
         routingAdapter: env.ROUTING_ADAPTER || 'local',
 
-        // Engine pool: one process per CPU core by default (each holds ~55 MB).
-        enginePoolSize: readInt(env, 'ENGINE_POOL_SIZE', Math.max(1, os.cpus().length), { min: 1, max: 256 }),
+        // Engine pool (each engine holds ~55 MB). Containers often report the
+        // HOST's core count, so the default is capped; set ENGINE_POOL_SIZE to
+        // the instance's real vCPU count in production.
+        enginePoolSize: readInt(env, 'ENGINE_POOL_SIZE', Math.max(1, Math.min(4, os.availableParallelism())), { min: 1, max: 256 }),
+        // Identifies this instance in logs, /api/health and the X-Instance-Id header,
+        // so load tests can verify traffic is spread across replicas.
+        instanceId: env.RAILWAY_REPLICA_ID || env.INSTANCE_ID || crypto.randomBytes(4).toString('hex'),
         engineTimeoutMs: readInt(env, 'ENGINE_TIMEOUT_MS', 10000, { min: 100, max: 600000 }),
         engineMaxQueuePerWorker: readInt(env, 'ENGINE_MAX_QUEUE', 200, { min: 1, max: 100000 }),
         engineVerboseLogs: env.ENGINE_VERBOSE_LOGS === '1',

@@ -1,0 +1,153 @@
+name: Distributed load test
+
+# Run from the Actions tab against a deployed environment (never production
+# without warning). Several GitHub runners generate load in parallel, start at
+# the same moment, and one report job judges the combined result.
+# See docs/CAPACITY.md section 6.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Base URL of the deployment (e.g. https://railyatra-staging.up.railway.app)
+        required: true
+      total_rate:
+        description: Total requests per second across all runners
+        default: "3000"
+      runners:
+        description: Number of load-generating runners (1-20)
+        default: "3"
+      duration:
+        description: Seconds of load per runner
+        default: "120"
+      connections_per_runner:
+        description: Concurrent connections per runner
+        default: "200"
+      scenario:
+        description: Traffic scenario
+        type: choice
+        options: [mixed, route, pareto]
+        default: mixed
+      max_p99_ms:
+        description: Fail if the combined p99 upper bound exceeds this
+        default: "300"
+      max_error_pct:
+        description: Fail if failures (errors, timeouts, non-2xx except 503) exceed this percentage
+        default: "0.1"
+      max_shed_pct:
+        description: Fail if 503 load shedding exceeds this percentage
+        default: "1"
+      min_instances:
+        description: Fail if fewer distinct instances answer (proves load balancing)
+        default: "1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: loadtest
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      runners: ${{ steps.plan.outputs.runners }}
+      per_runner_rate: ${{ steps.plan.outputs.per_runner_rate }}
+      start_at: ${{ steps.plan.outputs.start_at }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate inputs and plan runners
+        id: plan
+        env:
+          TARGET_URL: ${{ inputs.url }}
+          TOTAL_RATE: ${{ inputs.total_rate }}
+          RUNNERS: ${{ inputs.runners }}
+        run: node loadtest/plan.js
+      - name: Check target is ready and load-balanced
+        env:
+          TARGET_URL: ${{ inputs.url }}
+          MIN_INSTANCES: ${{ inputs.min_instances }}
+        run: |
+          curl -sf --max-time 20 "${TARGET_URL%/}/readyz"
+          node loadtest/probe-instances.js "$TARGET_URL" 60 --min-instances "$MIN_INSTANCES"
+
+  load:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(needs.plan.outputs.runners) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: loadtest/package-lock.json
+      - run: npm ci
+        working-directory: loadtest
+      - name: Wait for the common start time
+        env:
+          START_AT: ${{ needs.plan.outputs.start_at }}
+        run: |
+          wait=$(( START_AT - $(date +%s) ))
+          if [ "$wait" -gt 0 ]; then echo "starting in ${wait}s"; sleep "$wait"; else echo "late by $(( -wait ))s, starting now"; fi
+      - name: Generate load
+        working-directory: loadtest
+        env:
+          TARGET_URL: ${{ inputs.url }}
+          SCENARIO: ${{ inputs.scenario }}
+          RATE: ${{ needs.plan.outputs.per_runner_rate }}
+          DURATION: ${{ inputs.duration }}
+          CONNECTIONS: ${{ inputs.connections_per_runner }}
+          RUNNER: ${{ matrix.runner }}
+        run: |
+          mkdir -p results
+          node run.js "$SCENARIO" --url "$TARGET_URL" --rate "$RATE" --duration "$DURATION" \
+            --connections "$CONNECTIONS" --no-gate --json "results/runner-$RUNNER.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loadtest-runner-${{ matrix.runner }}
+          path: loadtest/results/runner-${{ matrix.runner }}.json
+          if-no-files-found: error
+
+  report:
+    needs: load
+    if: always() && needs.load.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: loadtest-runner-*
+          path: results
+          merge-multiple: true
+      - name: Combined verdict
+        env:
+          MAX_P99: ${{ inputs.max_p99_ms }}
+          MAX_ERR: ${{ inputs.max_error_pct }}
+          MAX_SHED: ${{ inputs.max_shed_pct }}
+        run: |
+          node loadtest/aggregate.js results --max-p99 "$MAX_P99" --max-error-pct "$MAX_ERR" \
+            --max-shed-pct "$MAX_SHED" --markdown summary.md
+      - name: Publish summary
+        if: always()
+        run: test -f summary.md && cat summary.md >> "$GITHUB_STEP_SUMMARY" || echo "no summary produced" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: loadtest-report
+          path: |
+            results/
+            summary.md

@@ -4,10 +4,12 @@
  * anything else emits human-readable lines for local development.
  */
 const json = process.env.LOG_FORMAT === 'json';
+// Which replica wrote the line (Railway sets RAILWAY_REPLICA_ID; k8s sets HOSTNAME).
+const instance = process.env.RAILWAY_REPLICA_ID || process.env.INSTANCE_ID || process.env.HOSTNAME || undefined;
 
 function write(level, msg, fields) {
     if (json) {
-        const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...fields });
+        const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, instance, ...fields });
         (level === 'error' ? process.stderr : process.stdout).write(line + '\n');
         return;
     }
