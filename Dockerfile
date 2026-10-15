@@ -6,7 +6,7 @@ COPY engine/ .
 RUN make -j$(nproc)
 
 # --- Stage 2: Frontend Builder ---
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install --frozen-lockfile || npm install
@@ -14,7 +14,7 @@ COPY frontend/ .
 RUN npm run build
 
 # --- Stage 3: Final Production Image ---
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 # No runtime dependencies needed for static engine!

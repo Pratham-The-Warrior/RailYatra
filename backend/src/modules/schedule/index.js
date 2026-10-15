@@ -37,6 +37,7 @@ function createRouter({ config, routing, caches, log, engineGate }) {
             });
         } catch (e) {
             log.error('schedule lookup failed', { train: trainNumber, err: e.message });
+            if (e.status === 503) res.set('Retry-After', '1');
             return res.status(e.status || 500).json({ error: 'Failed to fetch schedule' });
         }
 

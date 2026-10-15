@@ -59,6 +59,8 @@ function createRouter({ config, routing, caches, referenceData, engineGate }) {
             res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
             res.json(results);
         } catch (e) {
+            // Engine overloaded/not ready (503) is transient: tell clients when to retry.
+            if (e.status === 503) res.set('Retry-After', '1');
             res.status(e.status || 500).json({ error: e.message });
         }
     }
