@@ -1,49 +1,54 @@
 const fs = require('fs');
 const path = require('path');
+const config = require('../../config');
 
 /**
  * Controller for special train categories (e.g. Vande Bharat).
+ * Category files are discovered once at startup (master_train_data_<id>.json),
+ * so only known categories can be requested and each file is parsed once.
  */
-exports.getCategoryTrains = (req, res) => {
-    const { category } = req.params;
+const categories = new Map();
 
-    // Project root is backend/src/api/controllers -> ../../../
-    const categoryFile = path.join(__dirname, '..', '..', '..', '..', `master_train_data_${category.toLowerCase()}.json`);
-
-    try {
-        if (!fs.existsSync(categoryFile)) {
-            return res.status(404).json({ error: `Route data for ${category} not found` });
+function loadCategories() {
+    for (const file of fs.readdirSync(config.projectRoot)) {
+        const m = /^master_train_data_([a-z0-9]+)\.json$/.exec(file);
+        if (!m) continue;
+        try {
+            const trains = JSON.parse(fs.readFileSync(path.join(config.projectRoot, file), 'utf8'));
+            categories.set(m[1], trains.map(t => {
+                const firstStop = t.schedule[0];
+                const lastStop = t.schedule[t.schedule.length - 1];
+                return {
+                    train_number: t.train_number,
+                    train_name: t.train_name,
+                    type: t.type,
+                    classes_available: t.classes_available,
+                    operating_days: t.operating_days,
+                    source: {
+                        station_code: firstStop.station_code,
+                        station_name: firstStop.station_name,
+                        departure_time: firstStop.departure_time
+                    },
+                    destination: {
+                        station_code: lastStop.station_code,
+                        station_name: lastStop.station_name,
+                        arrival_time: lastStop.arrival_time
+                    }
+                };
+            }));
+        } catch (e) {
+            console.error(`[Category Controller]: failed to load ${file}: ${e.message}`);
         }
-
-        const data = fs.readFileSync(categoryFile, 'utf8');
-        const trains = JSON.parse(data);
-
-        const trainList = trains.map(t => {
-            const firstStop = t.schedule[0];
-            const lastStop = t.schedule[t.schedule.length - 1];
-
-            return {
-                train_number: t.train_number,
-                train_name: t.train_name,
-                type: t.type,
-                classes_available: t.classes_available,
-                operating_days: t.operating_days,
-                source: {
-                    station_code: firstStop.station_code,
-                    station_name: firstStop.station_name,
-                    departure_time: firstStop.departure_time
-                },
-                destination: {
-                    station_code: lastStop.station_code,
-                    station_name: lastStop.station_name,
-                    arrival_time: lastStop.arrival_time
-                }
-            };
-        });
-
-        res.json(trainList);
-    } catch (error) {
-        console.error(`[Category Controller Error]:`, error);
-        res.status(500).json({ error: 'Internal server error' });
     }
+}
+loadCategories();
+
+exports.getCategoryTrains = (req, res) => {
+    const category = String(req.params.category || '').toLowerCase();
+    const trainList = categories.get(category);
+    if (!trainList) {
+        return res.status(404).json({ error: `Route data for ${req.params.category} not found` });
+    }
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.json(trainList);
 };

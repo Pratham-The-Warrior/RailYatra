@@ -1,0 +1,91 @@
+# RailYatra on Kubernetes: stateless API pods (Node gateway + engine pool),
+# autoscaled on CPU, spread across zones, protected by a PodDisruptionBudget.
+# Put a CDN in front of the Ingress for edge caching (see docs/SCALING_ROADMAP.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: railyatra-api
+  labels: { app: railyatra-api }
+spec:
+  replicas: 3
+  strategy:
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 25% }
+  selector:
+    matchLabels: { app: railyatra-api }
+  template:
+    metadata:
+      labels: { app: railyatra-api }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: railyatra-api }
+      containers:
+        - name: api
+          image: ghcr.io/pratham-the-warrior/railyatra:latest
+          ports: [{ containerPort: 3000 }]
+          env:
+            - { name: ENGINE_POOL_SIZE, value: "4" }
+            - { name: ROUTE_CACHE_SIZE, value: "100000" }
+          resources:
+            requests: { cpu: "4", memory: "768Mi" }
+            limits:   { cpu: "4", memory: "1Gi" }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3000 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3000 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          lifecycle:
+            # Let the load balancer deregister the pod before draining.
+            preStop:
+              exec: { command: ["sleep", "5"] }
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: railyatra-api
+spec:
+  selector: { app: railyatra-api }
+  ports: [{ port: 80, targetPort: 3000 }]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: railyatra-api
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: railyatra-api }
+  minReplicas: 3
+  maxReplicas: 200
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 60 }
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies: [{ type: Percent, value: 100, periodSeconds: 30 }]
+    scaleDown:
+      stabilizationWindowSeconds: 300
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: railyatra-api
+spec:
+  minAvailable: 66%
+  selector:
+    matchLabels: { app: railyatra-api }

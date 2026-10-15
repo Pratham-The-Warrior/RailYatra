@@ -1,96 +1,174 @@
 const { spawn } = require('child_process');
+const crypto = require('crypto');
 const config = require('../config');
-
-let engineProcess = null;
-let requestQueue = [];
-let engineOutputBuffer = '';
+const metrics = require('./metrics');
 
 /**
- * spawns the C++ core engine process.
+ * Engine pool.
+ *
+ * Runs `config.enginePoolSize` independent C++ engine processes (each ~55 MB)
+ * and dispatches every request to the worker with the fewest in-flight
+ * requests. A crashed worker only affects its own in-flight requests, which
+ * are rejected immediately; the worker is respawned with backoff.
  */
-function spawnEngine() {
-    console.log(`[Engine]: Spawning core engine: ${config.enginePath}`);
-    engineProcess = spawn(config.enginePath, [config.dataDirPath]);
+const workers = [];
+let shuttingDown = false;
 
-    engineProcess.stdout.on('data', (data) => {
-        const output = data.toString();
-        processEngineOutput(output);
+function createWorker(index) {
+    const worker = {
+        index,
+        proc: null,
+        ready: false,
+        pending: new Map(),   // request_id -> { resolve, reject, timer }
+        buffer: '',
+        restarts: 0
+    };
+    workers[index] = worker;
+    startWorker(worker);
+    return worker;
+}
+
+function startWorker(worker) {
+    console.log(`[Engine ${worker.index}]: spawning ${config.enginePath}`);
+    const proc = spawn(config.enginePath, [config.dataDirPath], { stdio: ['pipe', 'pipe', 'pipe'] });
+    worker.proc = proc;
+    worker.ready = false;
+    worker.buffer = '';
+
+    proc.on('error', (err) => {
+        // ENOENT/EACCES etc. Without this handler Node crashes the whole server.
+        console.error(`[Engine ${worker.index}]: failed to start: ${err.message}`);
+    });
+    proc.stdin.on('error', (err) => {
+        console.error(`[Engine ${worker.index}]: stdin error: ${err.message}`);
     });
 
-    engineProcess.stderr.on('data', (data) => {
-        console.log(`[Engine Error]: ${data.toString().trim()}`);
+    proc.stdout.on('data', (data) => onStdout(worker, data));
+    proc.stderr.on('data', (data) => {
+        const text = data.toString();
+        if (text.includes('Ready for requests')) {
+            worker.ready = true;
+            worker.restarts = 0;
+        }
+        if (config.engineVerboseLogs) console.log(`[Engine ${worker.index}]: ${text.trim()}`);
     });
 
-    engineProcess.on('close', (code) => {
-        console.log(`[Engine]: Process exited with code ${code}. Restarting in 2s...`);
-        setTimeout(spawnEngine, 2000);
+    proc.on('close', (code) => {
+        worker.ready = false;
+        worker.proc = null;
+        failPending(worker, new Error('Engine process exited'));
+        if (shuttingDown) return;
+        const delay = Math.min(30000, 1000 * 2 ** worker.restarts++);
+        metrics.inc('engine_restarts_total');
+        console.error(`[Engine ${worker.index}]: exited with code ${code}. Restarting in ${delay}ms`);
+        setTimeout(() => startWorker(worker), delay);
     });
 }
 
-/**
- * Parses JSON output from the C++ engine.
- */
-function processEngineOutput(output) {
-    if (requestQueue.length === 0) return;
+function failPending(worker, err) {
+    for (const [, req] of worker.pending) {
+        clearTimeout(req.timer);
+        req.reject(err);
+    }
+    worker.pending.clear();
+}
 
-    engineOutputBuffer += output;
-
-    let newlineIndex;
-    while ((newlineIndex = engineOutputBuffer.indexOf('\n')) !== -1) {
-        const line = engineOutputBuffer.slice(0, newlineIndex).trim();
-        engineOutputBuffer = engineOutputBuffer.slice(newlineIndex + 1);
-
+function onStdout(worker, data) {
+    worker.buffer += data.toString();
+    let nl;
+    while ((nl = worker.buffer.indexOf('\n')) !== -1) {
+        const line = worker.buffer.slice(0, nl).trim();
+        worker.buffer = worker.buffer.slice(nl + 1);
         if (!line.startsWith('{')) continue;
-
+        let response;
         try {
-            const response = JSON.parse(line);
-            const reqIdx = requestQueue.findIndex(r => r.id === response.request_id);
-
-            if (reqIdx !== -1) {
-                const req = requestQueue[reqIdx];
-                clearTimeout(req.timeout);
-                req.resolve(response.results || response);
-                requestQueue.splice(reqIdx, 1);
-            }
+            response = JSON.parse(line);
         } catch (e) {
-            console.error("[Engine Parsing Error]:", e.message);
+            console.error(`[Engine ${worker.index}]: bad JSON from engine: ${e.message}`);
+            continue;
         }
+        const req = worker.pending.get(response.request_id);
+        if (!req) continue; // timed out earlier
+        worker.pending.delete(response.request_id);
+        clearTimeout(req.timer);
+        req.resolve(response.results !== undefined ? response.results : response);
     }
 }
 
-/**
- * Sends a JSON request to the C++ engine over stdin.
- */
-async function sendRequestToEngine(reqData) {
-    if (!engineProcess) {
-        throw new Error("Engine process is not running");
+function pickWorker() {
+    let best = null;
+    for (const w of workers) {
+        if (!w || !w.ready || !w.proc) continue;
+        if (!best || w.pending.size < best.pending.size) best = w;
+    }
+    return best;
+}
+
+/** Spawns the engine pool. Safe to call once at startup. */
+function spawnEngine() {
+    for (let i = 0; i < config.enginePoolSize; i++) createWorker(i);
+}
+
+/** Sends a request to the least-loaded engine worker. */
+function sendRequestToEngine(reqData) {
+    const worker = pickWorker();
+    if (!worker) {
+        metrics.inc('engine_unavailable_total');
+        return Promise.reject(Object.assign(new Error('Engine is not ready'), { status: 503 }));
+    }
+    // Backpressure: shed load instead of building unbounded queues.
+    if (worker.pending.size >= config.engineMaxQueuePerWorker) {
+        metrics.inc('engine_overload_total');
+        return Promise.reject(Object.assign(new Error('Server busy, please retry'), { status: 503 }));
     }
 
     return new Promise((resolve, reject) => {
-        const requestId = Date.now().toString();
-        const payload = { ...reqData, request_id: requestId };
-
-        const timeout = setTimeout(() => {
-            const idx = requestQueue.findIndex(r => r.id === requestId);
-            if (idx !== -1) {
-                requestQueue.splice(idx, 1);
-                console.error(`[Engine]: Request ${requestId} timed out`);
-                reject(new Error("Engine request timed out"));
+        const requestId = crypto.randomUUID();
+        const started = process.hrtime.bigint();
+        const timer = setTimeout(() => {
+            if (worker.pending.delete(requestId)) {
+                metrics.inc('engine_timeouts_total');
+                reject(Object.assign(new Error('Engine request timed out'), { status: 504 }));
             }
-        }, 30000);
+        }, config.engineTimeoutMs);
 
-        requestQueue.push({ id: requestId, resolve, reject, timeout });
+        worker.pending.set(requestId, {
+            timer,
+            resolve: (v) => {
+                metrics.observe('engine_request_ms', Number(process.hrtime.bigint() - started) / 1e6);
+                resolve(v);
+            },
+            reject
+        });
         try {
-            engineProcess.stdin.write(JSON.stringify(payload) + '\n');
+            worker.proc.stdin.write(JSON.stringify({ ...reqData, request_id: requestId }) + '\n');
         } catch (e) {
-            console.error("[Engine]: Failed to write to engine stdin:", e);
+            worker.pending.delete(requestId);
+            clearTimeout(timer);
             reject(e);
         }
     });
 }
 
+function shutdown() {
+    shuttingDown = true;
+    for (const w of workers) {
+        if (w && w.proc) {
+            failPending(w, new Error('Server shutting down'));
+            w.proc.kill('SIGTERM');
+        }
+    }
+}
+
+function status() {
+    return workers.map(w => ({ index: w.index, ready: w.ready, inflight: w.pending.size }));
+}
+
 module.exports = {
     spawnEngine,
     sendRequestToEngine,
-    getEngineProcess: () => engineProcess
+    shutdown,
+    status,
+    isReady: () => workers.some(w => w && w.ready),
+    getEngineProcess: () => (workers.find(w => w && w.proc) || {}).proc || null
 };

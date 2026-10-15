@@ -1,0 +1,12 @@
+{
+  "name": "railyatra-loadtest",
+  "private": true,
+  "description": "Load-test harness for the RailYatra API",
+  "scripts": {
+    "route": "node run.js route",
+    "mixed": "node run.js mixed"
+  },
+  "devDependencies": {
+    "autocannon": "8.0.0"
+  }
+}

@@ -157,13 +157,16 @@ static std::vector<RouteResult> runDijkstraPass(
 {
     int numStations = graph.stationCount();
 
-    // Per-pass bestCost — intermediate pruning only
-    std::vector<std::vector<int>> bestCost(
-        numStations,
-        std::vector<int>(passMaxSwitches + 2, std::numeric_limits<int>::max()));
+    // Per-pass bestCost — intermediate pruning only. One flat allocation
+    // (station-major) instead of numStations small vectors per pass.
+    const int layers = passMaxSwitches + 2;
+    std::vector<int> bestCostFlat((size_t)numStations * layers, std::numeric_limits<int>::max());
+    auto bestCost = [&](int station, int sw) -> int& {
+        return bestCostFlat[(size_t)station * layers + sw];
+    };
 
     std::vector<TraceNode> trace;
-    trace.reserve(100000);
+    trace.reserve(4096);
     const size_t MAX_TRACE = 500000;
 
     std::priority_queue<PQState, std::vector<PQState>, std::greater<PQState>> pq;
@@ -213,8 +216,8 @@ static std::vector<RouteResult> runDijkstraPass(
                     bool isDest = toIdSet.count(dest.stationId) > 0;
 
                     if (!isDest) {
-                        if (cost >= bestCost[dest.stationId][0]) continue;
-                        bestCost[dest.stationId][0] = cost;
+                        if (cost >= bestCost(dest.stationId, 0)) continue;
+                        bestCost(dest.stationId, 0) = cost;
                     }
 
                     if (trace.size() >= MAX_TRACE) continue;
@@ -310,9 +313,11 @@ static std::vector<RouteResult> runDijkstraPass(
                         int dist = dest.distanceKm - stop.distanceKm;
                         if (dist < 0) dist = 0;
 
+                        // Distance cost must accumulate across legs (top.cost
+                        // already holds the distance travelled so far).
                         int cost;
                         switch (sortMode) {
-                            case SortMode::DISTANCE: cost = dist; break;
+                            case SortMode::DISTANCE: cost = top.cost + dist; break;
                             default:                 cost = arrAbs; break;
                         }
 
@@ -320,8 +325,8 @@ static std::vector<RouteResult> runDijkstraPass(
 
                         if (!isDest) {
                             if (newSwitches > passMaxSwitches) continue;
-                            if (cost >= bestCost[dest.stationId][newSwitches]) continue;
-                            bestCost[dest.stationId][newSwitches] = cost;
+                            if (cost >= bestCost(dest.stationId, newSwitches)) continue;
+                            bestCost(dest.stationId, newSwitches) = cost;
                         }
 
                         if (trace.size() >= MAX_TRACE) continue;
@@ -346,7 +351,9 @@ static std::vector<RouteResult> runDijkstraPass(
     }
 
     std::sort(results.begin(), results.end(),
-        [](const RouteResult& a, const RouteResult& b) {
+        [sortMode](const RouteResult& a, const RouteResult& b) {
+            if (sortMode == SortMode::DISTANCE && a.totalDistanceKm != b.totalDistanceKm)
+                return a.totalDistanceKm < b.totalDistanceKm;
             if (a.totalTimeMin != b.totalTimeMin)
                 return a.totalTimeMin < b.totalTimeMin;
             return a.totalBufferMin < b.totalBufferMin;

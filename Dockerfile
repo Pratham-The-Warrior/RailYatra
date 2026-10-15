@@ -32,8 +32,15 @@ WORKDIR /app
 COPY master_train_data*.json stations.json city_stations.json ./
 COPY backend/ ./backend/
 
-ENV PORT=3000
+ENV PORT=3000 NODE_ENV=production
 EXPOSE 3000
+
+# Run as an unprivileged user
+RUN chown -R node:node /app
+USER node
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/readyz || exit 1
 
 WORKDIR /app/backend
 CMD ["node", "server.js"]
