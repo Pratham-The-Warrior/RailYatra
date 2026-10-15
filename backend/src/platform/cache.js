@@ -12,10 +12,20 @@ const metrics = require('./metrics');
  * without changing any feature module.
  */
 class LruCache {
-    constructor({ name, maxEntries = 10000, ttlMs = 10 * 60 * 1000 }) {
+    /**
+     * @param {object} o
+     * @param {string} o.name
+     * @param {number} [o.maxEntries]  entry limit
+     * @param {number} [o.maxBytes]    memory budget (serialized JSON size); bounds
+     *                                 memory regardless of how large values are
+     * @param {number} [o.ttlMs]
+     */
+    constructor({ name, maxEntries = 10000, maxBytes = Infinity, ttlMs = 10 * 60 * 1000 }) {
         this.name = name;
         this.maxEntries = maxEntries;
+        this.maxBytes = maxBytes;
         this.ttlMs = ttlMs;
+        this.bytes = 0;
         this.map = new Map();
         this.inflight = new Map();
         // Bumped by clear(); a computation that started under an older
@@ -26,14 +36,22 @@ class LruCache {
     clear() {
         this.map.clear();
         this.inflight.clear();
+        this.bytes = 0;
         this.generation++;
+    }
+
+    _delete(key) {
+        const entry = this.map.get(key);
+        if (!entry) return;
+        this.bytes -= entry.size;
+        this.map.delete(key);
     }
 
     get(key) {
         const hit = this.map.get(key);
         if (!hit) return undefined;
         if (hit.expires < Date.now()) {
-            this.map.delete(key);
+            this._delete(key);
             return undefined;
         }
         // Refresh recency
@@ -44,10 +62,13 @@ class LruCache {
 
     set(key, value) {
         if (this.maxEntries <= 0) return;
-        if (this.map.has(key)) this.map.delete(key);
-        this.map.set(key, { value, expires: Date.now() + this.ttlMs });
-        while (this.map.size > this.maxEntries) {
-            this.map.delete(this.map.keys().next().value);
+        const size = Number.isFinite(this.maxBytes) ? Buffer.byteLength(JSON.stringify(value) || '') : 0;
+        this._delete(key);
+        if (size > this.maxBytes) return;          // larger than the whole budget: don't cache
+        this.map.set(key, { value, expires: Date.now() + this.ttlMs, size });
+        this.bytes += size;
+        while (this.map.size > this.maxEntries || this.bytes > this.maxBytes) {
+            this._delete(this.map.keys().next().value);
         }
     }
 
@@ -92,6 +113,8 @@ class CacheRegistry {
         if (this.caches.has(options.name)) throw new Error(`Cache "${options.name}" already exists`);
         const cache = new LruCache(options);
         this.caches.set(options.name, cache);
+        metrics.gauge('cache_bytes', { cache: options.name }, () => cache.bytes);
+        metrics.gauge('cache_entries', { cache: options.name }, () => cache.size);
         return cache;
     }
 

@@ -18,7 +18,9 @@ function toApiSchedule(engineSchedule) {
 /** GET /api/schedule/:trainNumber: full timetable of one train. */
 function createRouter({ config, routing, caches, log }) {
     const router = express.Router();
-    const scheduleCache = caches.create({ name: 'schedule', maxEntries: 10000, ttlMs: 60 * 60 * 1000 });
+    const scheduleCache = caches.create({
+        name: 'schedule', maxEntries: 10000, maxBytes: config.smallCacheMaxMb * 1024 * 1024, ttlMs: 60 * 60 * 1000
+    });
 
     router.get('/:trainNumber', async (req, res) => {
         const raw = req.params.trainNumber;

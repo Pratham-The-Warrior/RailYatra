@@ -43,6 +43,10 @@ function loadConfig(env = process.env) {
         // Response caches
         routeCacheSize: readInt(env, 'ROUTE_CACHE_SIZE', 50000, { min: 0, max: 10000000 }),
         routeCacheTtlMs: readInt(env, 'ROUTE_CACHE_TTL_MS', 30 * 60 * 1000, { min: 0, max: 7 * 24 * 3600 * 1000 }),
+        // Memory budgets in MB. Route lists are ~35 KB each, so an entry limit
+        // alone could let the route cache reach gigabytes.
+        routeCacheMaxMb: readInt(env, 'ROUTE_CACHE_MAX_MB', 256, { min: 1, max: 65536 }),
+        smallCacheMaxMb: readInt(env, 'SMALL_CACHE_MAX_MB', 32, { min: 1, max: 65536 }),
 
         // Request limits (protect the engine from pathological inputs)
         limits: {

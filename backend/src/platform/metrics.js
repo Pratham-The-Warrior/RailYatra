@@ -3,6 +3,7 @@
  * Counters and fixed-bucket histograms, exposed at GET /metrics.
  */
 const counters = new Map();
+const gauges = new Map();   // key -> () => number, evaluated at scrape time
 const histograms = new Map();
 const BUCKETS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
 
@@ -29,8 +30,14 @@ function observe(name, value, labels) {
     h.count++;
 }
 
+/** Registers a gauge whose value is read when /metrics is scraped. */
+function gauge(name, labels, read) {
+    gauges.set(key(name, labels), read);
+}
+
 function render() {
     const lines = [];
+    for (const [k, read] of gauges) lines.push(`railyatra_${k} ${read()}`);
     for (const [k, v] of counters) lines.push(`railyatra_${k} ${v}`);
     for (const h of histograms.values()) {
         const base = h.labels ? Object.entries(h.labels).map(([a, b]) => `${a}="${b}",`).join('') : '';
@@ -46,4 +53,4 @@ function render() {
     return lines.join('\n') + '\n';
 }
 
-module.exports = { inc, observe, render };
+module.exports = { inc, observe, gauge, render };

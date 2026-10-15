@@ -158,3 +158,30 @@ test('a new module plugs in without touching existing code, and errors are handl
 test('a cache name can only be registered once per application', () => {
     assert.throws(() => container.caches.create({ name: 'route' }), /already exists/);
 });
+
+test('request metrics are labelled by API resource, not "static"', async () => {
+    await fetch(`${base}/api/schedule/abc`);                       // 400 answered inside the schedule router
+    await fetch(`${base}/api/route?from=NDLS&to=CSMT&date=2026-10-20&top_k=1`);
+    const text = await (await fetch(`${base}/metrics`)).text();
+    assert.match(text, /railyatra_http_requests_total\{route="\/api\/schedule",status="400"\} \d+/);
+    assert.match(text, /railyatra_http_requests_total\{route="\/api\/route",status="200"\} \d+/);
+    assert.doesNotMatch(text, /route="static",status="400"/);
+});
+
+test('caches respect a byte budget, not just an entry count', () => {
+    const { LruCache } = require('../src/platform/cache');
+    const value = 'x'.repeat(98);                         // JSON-serialized: 100 bytes
+    const c = new LruCache({ name: 'bytes', maxEntries: 1000, maxBytes: 350 });
+    for (let i = 0; i < 10; i++) c.set(`k${i}`, value);
+    assert.strictEqual(c.size, 3);                        // 3 x 100 <= 350 < 4 x 100
+    assert.ok(c.bytes <= 350);
+    assert.strictEqual(c.get('k0'), undefined);           // oldest evicted first
+    assert.strictEqual(c.get('k9'), value);
+    c.set('huge', 'y'.repeat(1000));                      // bigger than the whole budget
+    assert.strictEqual(c.get('huge'), undefined);
+    assert.strictEqual(c.size, 3);
+    c.set('k9', 'z');                                     // replacing an entry re-accounts its size
+    assert.strictEqual(c.bytes, 200 + 3);
+    c.clear();
+    assert.strictEqual(c.bytes, 0);
+});

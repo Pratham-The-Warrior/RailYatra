@@ -1,0 +1,17 @@
+{
+  "scenario": "mixed",
+  "connections": 10000,
+  "duration": 30,
+  "zipf": 1.1,
+  "rate_limit": 1500,
+  "rps_avg": 1481.2,
+  "rps_p50": 1478,
+  "latency_p50_ms": 198,
+  "latency_p90_ms": 1529,
+  "latency_p99_ms": 2873,
+  "latency_max_ms": 5967,
+  "total": 44436,
+  "non2xx": 185,
+  "errors": 0,
+  "timeouts": 0
+}

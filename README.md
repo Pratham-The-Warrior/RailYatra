@@ -56,7 +56,7 @@ A modular monolith with feature modules, shared platform ports and a single comp
 
 ## Scalability & Operations
 
-See [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit, capacity model, phased plan and load-test results.
+See [`docs/CAPACITY.md`](docs/CAPACITY.md) for the measured capacity model (100,000 concurrent users) and [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit and phased plan.
 
 - **Engine pool**: `ENGINE_POOL_SIZE` engine processes (default: CPU cores), least-loaded dispatch, crash isolation and auto-respawn.
 - **Caching**: in-process LRU with request coalescing for routes (keyed by weekday), schedules and autocomplete; CDN-friendly `Cache-Control` headers.
@@ -75,6 +75,7 @@ See [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit, capacity
 | `ENGINE_TIMEOUT_MS` | 10000 | Per-request engine timeout |
 | `ENGINE_MAX_QUEUE` | 200 | In-flight requests per engine before shedding with 503 |
 | `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route result cache |
+| `ROUTE_CACHE_MAX_MB` / `SMALL_CACHE_MAX_MB` | 256 / 32 | Cache memory budgets |
 
 ---
 

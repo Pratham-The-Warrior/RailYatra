@@ -3,7 +3,7 @@
 A **modular monolith**: one deployable service, built from loosely coupled
 modules behind stable interfaces. It scales horizontally by running more
 identical instances behind a load balancer and CDN (see
-`docs/SCALING_ROADMAP.md`), and any module can later be extracted into its
+`docs/CAPACITY.md` for measured sizing and `docs/SCALING_ROADMAP.md`), and any module can later be extracted into its
 own service without rewriting its callers.
 
 ```
@@ -92,7 +92,8 @@ instead of silently falling back.
 | `ENGINE_POOL_SIZE` | CPU cores | Engine processes per instance |
 | `ENGINE_TIMEOUT_MS` | 10000 | Per-request engine timeout |
 | `ENGINE_MAX_QUEUE` | 200 | In-flight requests per engine before shedding with 503 |
-| `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route result cache |
+| `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route cache entry limit and lifetime |
+| `ROUTE_CACHE_MAX_MB` / `SMALL_CACHE_MAX_MB` | 256 / 32 | Cache memory budgets (route; schedule and stations) |
 | `TRAIN_DATA_PATH` | `master_train_data.json` | Timetable file loaded by the engines |
 | `REFERENCE_DATA_DIR` | project root | Where `stations.json`, `city_stations.json`, category files live |
 | `ROUTING_ADAPTER` | `local` | RoutingPort implementation |

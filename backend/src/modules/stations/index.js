@@ -36,10 +36,12 @@ function buildIndexes({ stations, cities }) {
     return { stationIndex, cityIndex };
 }
 
-function createRouter({ caches, referenceData }) {
+function createRouter({ config, caches, referenceData }) {
     const router = express.Router();
     // Fuzzy search costs a few ms; autocomplete prefixes repeat a lot.
-    const searchCache = caches.create({ name: 'stations', maxEntries: 20000, ttlMs: 60 * 60 * 1000 });
+    const searchCache = caches.create({
+        name: 'stations', maxEntries: 20000, maxBytes: config.smallCacheMaxMb * 1024 * 1024, ttlMs: 60 * 60 * 1000
+    });
     let indexes = buildIndexes(referenceData.current());
     referenceData.onChange((snapshot) => { indexes = buildIndexes(snapshot); });
 

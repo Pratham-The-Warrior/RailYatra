@@ -10,7 +10,12 @@ const { resolveStationCodes } = require('./stationResolver');
  */
 function createRouter({ config, routing, caches, referenceData }) {
     const router = express.Router();
-    const routeCache = caches.create({ name: 'route', maxEntries: config.routeCacheSize, ttlMs: config.routeCacheTtlMs });
+    const routeCache = caches.create({
+        name: 'route',
+        maxEntries: config.routeCacheSize,
+        maxBytes: config.routeCacheMaxMb * 1024 * 1024,
+        ttlMs: config.routeCacheTtlMs
+    });
     const { limits } = config;
 
     function parseInput(input) {

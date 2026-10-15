@@ -28,10 +28,13 @@ function createApp(container, { featureModules = modules } = {}) {
             const v = routing.dataVersion();
             if (v) res.set('X-Data-Version', v);
         }
+        // Label from the full original path, computed now: inside mounted
+        // routers Express rewrites req.path, so reading it on 'finish' would
+        // mislabel every API response as "static". Low cardinality: /api/<resource>.
+        const fullPath = req.originalUrl.split('?')[0];
+        const route = fullPath.startsWith('/api/') ? '/api/' + fullPath.split('/')[2] : 'static';
         const start = process.hrtime.bigint();
         res.on('finish', () => {
-            // Low-cardinality route label: /api/<resource>
-            const route = req.path.startsWith('/api/') ? '/api/' + req.path.split('/')[2] : 'static';
             metrics.inc('http_requests_total', { route, status: res.statusCode });
             metrics.observe('http_request_ms', Number(process.hrtime.bigint() - start) / 1e6, { route });
         });
