@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from 'framer-motion';
 import { ArrowLeft, Search, Train, Sparkles, Clock, ChevronRight } from "lucide-react";
+import { api } from '@/api/endpoints';
 
 interface TrainRoute {
     train_number: string;
@@ -43,7 +44,7 @@ export const CategoryRoutes: React.FC<CategoryRoutesProps> = ({
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch(`/api/category/${category}`);
+                const response = await api.category(category);
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error || `Failed to fetch ${categoryName} routes`);

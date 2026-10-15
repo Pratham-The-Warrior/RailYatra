@@ -59,6 +59,18 @@ the `Handler` signature and register it in `makeHandlerRegistry()`
 (`engine/handlers.cpp`). Prove refactors change nothing with
 `python3 engine/tests/golden_protocol.py <old-binary> <new-binary>`.
 
+## API contract
+
+`docs/openapi.json` (OpenAPI 3.1) is the contract between frontend and backend.
+`backend/test/contract.test.js` calls every documented operation, including
+error responses, and validates each real response against the schema for its
+status code. It also fails if a feature module or a spec path is not covered.
+The frontend reaches the backend only through `frontend/src/api/endpoints.ts`,
+which owns every URL; components keep their own loading and error handling.
+
+Changing an endpoint therefore means: update the module, the spec and
+`endpoints.ts` together; the contract test proves they agree.
+
 ## Lifecycle
 
 | Event | What happens |
@@ -90,7 +102,7 @@ instead of silently falling back.
 
 | Layer | Command |
 |---|---|
-| Backend (integration + architecture) | `cd backend && npm test` |
+| Backend (integration, architecture, API contract) | `cd backend && npm test` |
 | Engine correctness | `python3 engine/tests/validate_pareto.py 150 1` |
 | Engine protocol stability | `python3 engine/tests/golden_protocol.py <ref> <candidate>` |
 | Data pipeline | `python3 -m unittest discover -s datapipe/tests -t .` and `python3 -m datapipe check` |

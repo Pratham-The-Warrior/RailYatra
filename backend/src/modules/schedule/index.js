@@ -4,6 +4,17 @@ const express = require('express');
 const { badRequest } = require('../../platform/errors');
 const { isTrainNumber } = require('../../platform/validation');
 
+/**
+ * The engine reports operating days as "Monday"...; the API contract (and
+ * every other endpoint) uses the data format's lowercase keys.
+ */
+function toApiSchedule(engineSchedule) {
+    if (!engineSchedule || !engineSchedule.operating_days) return engineSchedule;
+    const days = {};
+    for (const [day, runs] of Object.entries(engineSchedule.operating_days)) days[day.toLowerCase()] = runs;
+    return { ...engineSchedule, operating_days: days };
+}
+
 /** GET /api/schedule/:trainNumber: full timetable of one train. */
 function createRouter({ config, routing, caches, log }) {
     const router = express.Router();
@@ -19,7 +30,7 @@ function createRouter({ config, routing, caches, log }) {
         try {
             data = await scheduleCache.getOrCompute(trainNumber, async () => {
                 const r = await routing.request({ type: 'schedule', train_number: trainNumber });
-                return r && r.error ? { __error: r.error } : r;
+                return r && r.error ? { __error: r.error } : toApiSchedule(r);
             });
         } catch (e) {
             log.error('schedule lookup failed', { train: trainNumber, err: e.message });

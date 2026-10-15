@@ -7,6 +7,7 @@ import {
 import { motion } from 'framer-motion';
 import { LandingView } from '../components/LiveStatus/LandingView';
 import { TrackingResults } from '../components/LiveStatus/TrackingResults';
+import { api } from '@/api/endpoints';
 
 // --- Types ---
 interface StationTiming {
@@ -116,7 +117,7 @@ export const LiveStatus: React.FC<LiveStatusProps> = ({ onNavigate, initialTrain
             let res: Response;
             try {
                 [res] = await Promise.all([
-                    fetch(`/api/livestatus/${num.trim()}`),
+                    api.liveStatus(num.trim()),
                     minSpinner
                 ]) as [Response, unknown];
             } catch {

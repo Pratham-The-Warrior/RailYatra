@@ -1,0 +1,39 @@
+/**
+ * Single source of truth for backend URLs (contract: docs/openapi.json).
+ *
+ * Each function builds the request and returns the raw Response, so callers
+ * keep full control of their own loading and error handling. Components must
+ * not hard-code /api paths; change an endpoint here and every caller follows.
+ */
+import type { SearchParams } from '@/types';
+
+type TradeoffParams = Pick<SearchParams, 'from' | 'to' | 'date' | 'max_switches' | 'max_wait'>;
+
+const toQuery = (params: Record<string, string | number>) =>
+    new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+
+export const api = {
+    /** Ranked journeys. GET so identical searches are cacheable by URL at the CDN and browser. */
+    routes: (params: SearchParams) =>
+        fetch(`/api/route?${toQuery({ ...params })}`),
+
+    /** Best trade-offs: earliest arrival for each number of changes. */
+    tradeoffs: ({ from, to, date, max_switches, max_wait }: TradeoffParams) =>
+        fetch(`/api/route/pareto?${toQuery({ from, to, date, max_switches, max_wait })}`),
+
+    /** Station and city autocomplete. */
+    stations: (query: string, init?: RequestInit) =>
+        fetch(`/api/stations?${toQuery({ q: query })}`, init),
+
+    /** Full timetable of one train. */
+    schedule: (trainNumber: string) =>
+        fetch(`/api/schedule/${encodeURIComponent(trainNumber)}`),
+
+    /** Special-train collection, e.g. "vandebharat". */
+    category: (categoryId: string) =>
+        fetch(`/api/category/${encodeURIComponent(categoryId)}`),
+
+    /** Live running status (currently answers 503 until a data source exists). */
+    liveStatus: (trainNumber: string) =>
+        fetch(`/api/livestatus/${encodeURIComponent(trainNumber)}`),
+};

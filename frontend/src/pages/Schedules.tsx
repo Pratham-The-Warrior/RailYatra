@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { SchedulesError } from '../components/Schedules/SchedulesError';
 import { SchedulesLanding } from '../components/Schedules/SchedulesLanding';
 import { SchedulesResult } from '../components/Schedules/SchedulesResult';
+import { api } from '@/api/endpoints';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 export interface ScheduleItem {
@@ -93,7 +94,7 @@ export const Schedules: React.FC<SchedulesProps> = ({ onNavigate, initialTrainNu
         try {
             let res: Response;
             try {
-                res = await fetch(`/api/schedule/${num.trim()}`);
+                res = await api.schedule(num.trim());
             } catch {
                 throw new Error('Unable to connect to the server. Sorry for the inconvenience.');
             }

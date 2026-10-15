@@ -8,6 +8,7 @@ import { RouteCardMobile } from "@/components/RouteCardMobile";
 import { BestTradeoffs } from "@/components/BestTradeoffs";
 import { LayoutToggle, ViewLayout } from "@/components/LayoutToggle";
 import { Calendar, History, ArrowRight, Star, Activity, ChevronDown, CheckCircle2 } from "lucide-react";
+import { api } from "@/api/endpoints";
 
 const STORAGE_KEY = 'railyatra_recent_searches';
 
@@ -66,11 +67,7 @@ export function Home({ onNavigate }: HomeProps) {
     // Best trade-offs load independently: a failure here never affects the main results.
     const loadTradeoffs = async (params: SearchParams, seq: number) => {
         try {
-            const query = new URLSearchParams({
-                from: params.from, to: params.to, date: params.date,
-                max_switches: String(params.max_switches), max_wait: String(params.max_wait),
-            });
-            const res = await fetch(`/api/route/pareto?${query}`);
+            const res = await api.tradeoffs(params);
             if (!res.ok) return;
             const data = await res.json();
             if (seq === searchSeq.current && Array.isArray(data)) setTradeoffs(data);
@@ -90,11 +87,7 @@ export function Home({ onNavigate }: HomeProps) {
         try {
             let response: Response;
             try {
-                // GET so identical searches are cacheable by URL at the CDN and browser.
-                const query = new URLSearchParams(
-                    Object.entries(params).map(([k, v]) => [k, String(v)])
-                );
-                response = await fetch(`/api/route?${query}`);
+                response = await api.routes(params);
             } catch {
                 throw new Error("Unable to connect to the server. Sorry for the inconvenience.");
             }

@@ -1,0 +1,966 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RailYatra API",
+    "version": "1.0.0",
+    "description": "Contract between the RailYatra frontend and backend. Validated by backend/test/contract.test.js."
+  },
+  "paths": {
+    "/api/route": {
+      "get": {
+        "operationId": "searchRoutes",
+        "summary": "Ranked journeys between stations or cities",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Station code, \"Name (CODE)\", or CITY:<KEY>"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": ""
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "YYYY-MM-DD"
+          },
+          {
+            "name": "max_switches",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "description": ""
+          },
+          {
+            "name": "max_wait",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 30,
+              "maximum": 1200
+            },
+            "description": ""
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "time",
+                "distance",
+                "switches"
+              ]
+            },
+            "description": ""
+          },
+          {
+            "name": "top_k",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "description": ""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Routes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Engine unavailable or overloaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Engine timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "searchRoutesPost",
+        "summary": "Same as GET with a JSON body (kept for compatibility)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to",
+                  "date"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Routes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Engine unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Engine timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/route/pareto": {
+      "get": {
+        "operationId": "searchTradeoffs",
+        "summary": "Earliest arrival for each number of changes",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Station code, \"Name (CODE)\", or CITY:<KEY>"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": ""
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "YYYY-MM-DD"
+          },
+          {
+            "name": "max_switches",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "description": ""
+          },
+          {
+            "name": "max_wait",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 30,
+              "maximum": 1200
+            },
+            "description": ""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pareto-optimal routes, fewest changes first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Engine unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Engine timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stations": {
+      "get": {
+        "operationId": "searchStations",
+        "summary": "Fuzzy station and city autocomplete",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "At least 2 characters; shorter returns []"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matches (cities first)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedule/{trainNumber}": {
+      "get": {
+        "operationId": "getSchedule",
+        "summary": "Full timetable of one train",
+        "parameters": [
+          {
+            "name": "trainNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,5}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Schedule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid train number",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown train",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Engine unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Engine timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/category/{category}": {
+      "get": {
+        "operationId": "getCategory",
+        "summary": "Special-train collection",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pdf/{trainNumber}": {
+      "get": {
+        "operationId": "getSchedulePdf",
+        "summary": "Schedule PDF (or redirect to PDF_BASE_URL)",
+        "parameters": [
+          {
+            "name": "trainNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,5}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "302": {
+            "description": "Redirect to PDF_BASE_URL"
+          },
+          "400": {
+            "description": "Invalid train number",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No PDF",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/livestatus/{trainNumber}": {
+      "get": {
+        "operationId": "getLiveStatus",
+        "summary": "Live running status (not available yet)",
+        "parameters": [
+          {
+            "name": "trainNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "503": {
+            "description": "Unavailable until a live data source exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Instance health detail",
+        "responses": {
+          "200": {
+            "description": "Health",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Leg": {
+        "type": "object",
+        "properties": {
+          "train_number": {
+            "type": "string"
+          },
+          "train_name": {
+            "type": "string"
+          },
+          "train_type": {
+            "type": "string"
+          },
+          "from_code": {
+            "type": "string"
+          },
+          "from_name": {
+            "type": "string"
+          },
+          "to_code": {
+            "type": "string"
+          },
+          "to_name": {
+            "type": "string"
+          },
+          "departure_time": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$"
+          },
+          "arrival_time": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$"
+          },
+          "distance_km": {
+            "type": "integer"
+          },
+          "travel_time_min": {
+            "type": "integer"
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "train_number",
+          "train_name",
+          "train_type",
+          "from_code",
+          "from_name",
+          "to_code",
+          "to_name",
+          "departure_time",
+          "arrival_time",
+          "distance_km",
+          "travel_time_min",
+          "classes"
+        ],
+        "additionalProperties": false
+      },
+      "Route": {
+        "type": "object",
+        "properties": {
+          "total_distance_km": {
+            "type": "integer"
+          },
+          "total_time_min": {
+            "type": "integer"
+          },
+          "total_buffer_min": {
+            "type": "integer"
+          },
+          "total_time_formatted": {
+            "type": "string"
+          },
+          "switches": {
+            "type": "integer"
+          },
+          "legs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/Leg"
+            }
+          }
+        },
+        "required": [
+          "total_distance_km",
+          "total_time_min",
+          "total_buffer_min",
+          "total_time_formatted",
+          "switches",
+          "legs"
+        ],
+        "additionalProperties": false
+      },
+      "RouteList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Route"
+        }
+      },
+      "Station": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "code"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^CITY:"
+              },
+              "name": {
+                "type": "string"
+              },
+              "isCity": {
+                "const": true
+              },
+              "stationCount": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "code",
+              "name",
+              "isCity",
+              "stationCount"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "StationList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Station"
+        }
+      },
+      "OperatingDays": {
+        "type": "object",
+        "properties": {
+          "sunday": {
+            "type": "boolean"
+          },
+          "monday": {
+            "type": "boolean"
+          },
+          "tuesday": {
+            "type": "boolean"
+          },
+          "wednesday": {
+            "type": "boolean"
+          },
+          "thursday": {
+            "type": "boolean"
+          },
+          "friday": {
+            "type": "boolean"
+          },
+          "saturday": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "sunday",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday"
+        ],
+        "additionalProperties": false
+      },
+      "ScheduleStop": {
+        "type": "object",
+        "properties": {
+          "station_code": {
+            "type": "string"
+          },
+          "station_name": {
+            "type": "string"
+          },
+          "arrival_time": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "departure_time": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "day_of_journey": {
+            "type": "integer"
+          },
+          "distance_km": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "station_code",
+          "station_name",
+          "arrival_time",
+          "departure_time",
+          "day_of_journey",
+          "distance_km"
+        ],
+        "additionalProperties": false
+      },
+      "Schedule": {
+        "type": "object",
+        "properties": {
+          "train_number": {
+            "type": "string"
+          },
+          "train_name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "classes_available": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "operating_days": {
+            "$ref": "#/components/schemas/OperatingDays"
+          },
+          "schedule": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleStop"
+            }
+          },
+          "hasPdf": {
+            "type": "boolean"
+          },
+          "pdfUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "train_number",
+          "train_name",
+          "type",
+          "classes_available",
+          "operating_days",
+          "schedule",
+          "hasPdf",
+          "pdfUrl"
+        ],
+        "additionalProperties": false
+      },
+      "CategoryTrain": {
+        "type": "object",
+        "properties": {
+          "train_number": {
+            "type": "string"
+          },
+          "train_name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "classes_available": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "operating_days": {
+            "$ref": "#/components/schemas/OperatingDays"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "station_code": {
+                "type": "string"
+              },
+              "station_name": {
+                "type": "string"
+              },
+              "departure_time": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "station_code",
+              "station_name",
+              "departure_time"
+            ],
+            "additionalProperties": false
+          },
+          "destination": {
+            "type": "object",
+            "properties": {
+              "station_code": {
+                "type": "string"
+              },
+              "station_name": {
+                "type": "string"
+              },
+              "arrival_time": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "station_code",
+              "station_name",
+              "arrival_time"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "train_number",
+          "train_name",
+          "type",
+          "classes_available",
+          "operating_days",
+          "source",
+          "destination"
+        ],
+        "additionalProperties": false
+      },
+      "CategoryList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CategoryTrain"
+        }
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "const": "ok"
+          },
+          "uptime": {
+            "type": "number"
+          },
+          "engine": {
+            "type": "boolean"
+          },
+          "dataVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "engines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "type": "integer"
+                },
+                "ready": {
+                  "type": "boolean"
+                },
+                "inflight": {
+                  "type": "integer"
+                },
+                "pid": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "index",
+                "ready",
+                "inflight",
+                "pid"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "platform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "uptime",
+          "engine",
+          "dataVersion",
+          "engines",
+          "platform"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}
