@@ -18,4 +18,12 @@ router.use('/schedule', scheduleRoutes);
 router.use('/pdf', pdfRoutes);
 router.use('/category', categoryRoutes);
 
+/**
+ * Live running status needs a licensed data source (see docs/SCALING_ROADMAP.md,
+ * feature #7). Respond explicitly instead of a generic 404 so the UI can explain.
+ */
+router.get('/livestatus/:trainNumber', (req, res) => {
+    res.status(503).json({ error: 'Live train status is temporarily unavailable. Please check back later.' });
+});
+
 module.exports = router;

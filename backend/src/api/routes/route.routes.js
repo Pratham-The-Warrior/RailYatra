@@ -8,4 +8,10 @@ const controller = require('../controllers/route.controller');
  */
 router.post('/', controller.searchRoute);
 
+/**
+ * @route   GET /api/route?from=&to=&date=&max_switches=&max_wait=&sort_by=&top_k=
+ * @desc    Same as POST, but cacheable by URL at the CDN/browser
+ */
+router.get('/', controller.searchRoute);
+
 module.exports = router;

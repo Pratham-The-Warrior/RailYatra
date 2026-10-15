@@ -110,12 +110,19 @@ Exit: ≥5× baseline throughput, p99 < 500 ms at 100 connections, zero crashes 
 tests in CI. **Met:** 7–10×, p99 105–353 ms.
 
 ### Phase 2: Horizontal scale and edge (target: 20k req/s origin, 100k req/s at edge)
-1. CI pipeline (GitHub Actions): build engine, `npm test`, frontend build, image push, and a
-   **load-test gate** (fail the PR if `mixed` p99 regresses > 20% vs `main`).
+**Progress (shipped):** item 1 is done, item 3 is partly done (JSON logs), and the code part of
+item 2 is done: `GET /api/route` exists and the frontend uses it. Cluster rollout, CDN and the
+distributed load test still need cloud infrastructure.
+
+1. ✅ CI pipeline (GitHub Actions): build engine, `npm test`, frontend build, image push, and a
+   **load-test gate** (fail the PR if `mixed` p99 regresses > 20% vs `main`). *Shipped as
+   `.github/workflows/ci.yml`: engine build, 12 backend integration tests, frontend typecheck and
+   build, a `mixed` load test that fails on any error/non-2xx or p99 > 1 s, and a Docker build plus
+   container smoke test. The relative-regression comparison vs `main` is a follow-up.*
 2. Deploy `deploy/k8s` to a managed cluster across 3 AZs; CDN in front with the cache rules from
    `nginx.conf` (POST-body cache key for `/api/route`, or switch route search to
-   `GET /api/route?from=…&to=…&date=…` so every CDN can cache it natively; **recommended**).
-3. Structured JSON logs + OpenTelemetry traces (gateway → engine) + Grafana dashboards from
+   `GET /api/route?from=…&to=…&date=…` so every CDN can cache it natively; **✅ done: the frontend now uses GET, and POST is kept for compatibility**).
+3. ✅ Structured JSON logs (`LOG_FORMAT=json`). Still to do: OpenTelemetry traces (gateway → engine) + Grafana dashboards from
    `/metrics`.
 4. **SLOs:** availability 99.9% (monthly), route search p99 < 300 ms at origin, autocomplete p99 <
    100 ms. Multi-window burn-rate alerts.
@@ -186,10 +193,8 @@ so engineering investment compounds.
 
 ## 6. Known remaining issues (tracked, not fixed here)
 
-- Live Status page calls a removed endpoint; either remove it from the nav or reintroduce it via a
-  licensed data source (feature #7).
-- `frontend/src/utils/fareCalculator.ts` (5k lines) is unused and its class normalization is broken
-  (compares upper-cased input to mixed-case strings).
+- Live Status: the endpoint now returns an explicit 503 "temporarily unavailable" message, which
+  the page displays. A real implementation needs a licensed data source (feature #7).
+- ✅ Removed the unused 5k-line `fareCalculator.ts` and the Windows-only `tests/test_engine.js`.
 - Results include dominated itineraries and near-duplicates differing only by transfer station;
   addressed by RAPTOR's Pareto sets in Phase 3.
-- `tests/test_engine.js` is Windows-only; superseded by `backend/test/api.test.js`.

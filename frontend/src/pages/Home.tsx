@@ -70,13 +70,11 @@ export function Home({ onNavigate }: HomeProps) {
         try {
             let response: Response;
             try {
-                response = await fetch("/api/route", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(params),
-                });
+                // GET so identical searches are cacheable by URL at the CDN and browser.
+                const query = new URLSearchParams(
+                    Object.entries(params).map(([k, v]) => [k, String(v)])
+                );
+                response = await fetch(`/api/route?${query}`);
             } catch {
                 throw new Error("Unable to connect to the server. Sorry for the inconvenience.");
             }

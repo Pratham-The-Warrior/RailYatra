@@ -4,6 +4,7 @@ const fs = require('fs');
 const apiRoutes = require('./api/routes');
 const engine = require('./services/engine.service');
 const metrics = require('./services/metrics');
+const log = require('./services/logger');
 
 const app = express();
 
@@ -84,7 +85,7 @@ if (fs.existsSync(distPath)) {
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
     const status = err.status || err.statusCode || 500;
-    if (status >= 500) console.error('[Server Error]:', err.message);
+    if (status >= 500) log.error('unhandled request error', { path: req.path, err: err.message });
     res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
 });
 

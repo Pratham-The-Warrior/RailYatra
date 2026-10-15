@@ -3,6 +3,10 @@
  *
  * Usage: node run.js <scenario> [--url http://localhost:3000] [--connections 100]
  *                    [--duration 20] [--zipf 1.1] [--json out.json]
+ *                    [--max-p99 <ms>] [--min-rps <n>]
+ *
+ * Exits non-zero if any request errors, any non-2xx response, or a threshold
+ * is violated, so it can be used as a CI performance gate.
  *
  * Scenarios
  *   route  – POST /api/route only, random station pairs and dates (cache-hostile
@@ -84,5 +88,15 @@ const instance = autocannon({
     };
     console.log(JSON.stringify(summary, null, 2));
     if (args.json) require('fs').writeFileSync(args.json, JSON.stringify(summary, null, 2));
+
+    const failures = [];
+    if (res.errors || res.timeouts) failures.push(`${res.errors} errors, ${res.timeouts} timeouts`);
+    if (res.non2xx) failures.push(`${res.non2xx} non-2xx responses`);
+    if (args['max-p99'] && res.latency.p99 > Number(args['max-p99'])) failures.push(`p99 ${res.latency.p99}ms > ${args['max-p99']}ms`);
+    if (args['min-rps'] && res.requests.average < Number(args['min-rps'])) failures.push(`rps ${res.requests.average} < ${args['min-rps']}`);
+    if (failures.length) {
+        console.error('LOAD TEST FAILED: ' + failures.join('; '));
+        process.exit(1);
+    }
 });
 autocannon.track(instance, { renderProgressBar: false, renderResultsTable: false });

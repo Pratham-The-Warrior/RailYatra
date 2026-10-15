@@ -8,13 +8,14 @@
 const app = require('./src/app');
 const config = require('./src/config');
 const engine = require('./src/services/engine.service');
+const log = require('./src/services/logger');
 
 // Start the engine pool before accepting traffic; /readyz reports 503 until
 // at least one worker has loaded the timetable.
 engine.spawnEngine();
 
 const server = app.listen(config.port, () => {
-    console.log(`[Server]: backend running at http://localhost:${config.port} (engine pool: ${config.enginePoolSize})`);
+    log.info('server listening', { port: Number(config.port), enginePool: config.enginePoolSize });
 });
 
 // Keep-alive must outlive the load balancer's idle timeout to avoid 502s.
@@ -26,10 +27,10 @@ let stopping = false;
 function shutdown(signal) {
     if (stopping) return;
     stopping = true;
-    console.log(`[Server]: ${signal} received. Draining...`);
+    log.info('shutdown requested, draining', { signal });
     server.close(() => {
         engine.shutdown();
-        console.log('[Server]: Closed out remaining connections.');
+        log.info('shutdown complete');
         process.exit(0);
     });
     setTimeout(() => process.exit(1), 15000).unref();

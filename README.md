@@ -53,7 +53,9 @@ See [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit, capacity
 - **Engine pool**: `ENGINE_POOL_SIZE` engine processes (default: CPU cores), least-loaded dispatch, crash isolation and auto-respawn.
 - **Caching**: in-process LRU with request coalescing for routes (keyed by weekday), schedules and autocomplete; CDN-friendly `Cache-Control` headers.
 - **Endpoints**: `/healthz` (liveness), `/readyz` (readiness), `/metrics` (Prometheus).
-- **Tests**: `cd backend && npm test` (requires a built engine).
+- **Tests**: `cd backend && npm test` (requires a built engine). CI (`.github/workflows/ci.yml`) also runs a frontend typecheck/build, a load-test gate and a Docker smoke test.
+- **API**: route search is available as `GET /api/route?from=&to=&date=…` (CDN-cacheable; used by the frontend) and as `POST /api/route` with a JSON body.
+- **Logs**: set `LOG_FORMAT=json` for structured one-line JSON logs.
 - **Load tests**: `cd loadtest && npm install && node run.js mixed --url http://localhost:3000`.
 - **Deploy**: `deploy/docker-compose.yml` (+ nginx edge) and `deploy/k8s/railyatra.yaml` (HPA, PDB).
 

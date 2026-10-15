@@ -3,6 +3,7 @@ const path = require('path');
 const config = require('../../config');
 const { sendRequestToEngine } = require('../../services/engine.service');
 const { LruCache } = require('../../services/cache');
+const log = require('../../services/logger');
 
 const scheduleCache = new LruCache({ name: 'schedule', maxEntries: 10000, ttlMs: 60 * 60 * 1000 });
 
@@ -38,7 +39,7 @@ exports.getSchedule = async (req, res) => {
             pdfUrl: hasPdf ? `/api/pdf/${trainNumber}` : null
         });
     } catch (e) {
-        console.error("[Schedule Controller Error]:", e.message);
+        log.error('schedule lookup failed', { train: trainNumber, err: e.message });
         res.status(e.status || 500).json({ error: "Failed to fetch schedule" });
     }
 };

@@ -96,3 +96,19 @@ test('health, readiness and metrics', async () => {
     assert.match(m, /railyatra_http_requests_total/);
     assert.match(m, /railyatra_cache_hits_total/);
 });
+
+test('GET /api/route matches POST and is cacheable', async () => {
+    const params = { from: 'NDLS', to: 'CSMT', date: '2026-10-20', max_switches: 1, top_k: 5 };
+    const viaPost = await (await post(params)).json();
+    const res = await fetch(`${base}/api/route?${new URLSearchParams(params)}`);
+    assert.strictEqual(res.status, 200);
+    assert.match(res.headers.get('cache-control'), /public/);
+    assert.deepStrictEqual(await res.json(), viaPost);
+    assert.strictEqual((await fetch(`${base}/api/route?from=NDLS`)).status, 400);
+});
+
+test('live status endpoint explains it is unavailable', async () => {
+    const res = await fetch(`${base}/api/livestatus/12138`);
+    assert.strictEqual(res.status, 503);
+    assert.match((await res.json()).error, /unavailable/i);
+});

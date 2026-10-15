@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const Fuse = require('fuse.js');
 const { LruCache } = require('../../services/cache');
+const log = require('../../services/logger');
 
 // Fuse.js fuzzy search costs a few ms per query; autocomplete prefixes are
 // extremely repetitive, so cache the final response per normalized query.
@@ -40,7 +41,7 @@ function loadCityStations() {
             ]
         });
     } catch (e) {
-        console.error("[City Stations]: Failed to load city_stations.json:", e.message);
+        log.error('failed to load city_stations.json', { err: e.message });
         cityStationsData = {};
     }
 }
@@ -107,7 +108,7 @@ exports.getStations = async (req, res) => {
         searchCache.set(q, body);
         res.json(body);
     } catch (e) {
-        console.error("[Stations Controller Error]:", e);
+        log.error('station search failed', { err: e.message });
         res.status(500).json({ error: "Failed to fetch stations" });
     }
 };

@@ -3,6 +3,7 @@ const path = require('path');
 const config = require('../../config');
 const engine = require('../../services/engine.service');
 const { LruCache } = require('../../services/cache');
+const log = require('../../services/logger');
 
 let cityStationsData = null;
 
@@ -15,7 +16,7 @@ function getCityStations() {
         const cityPath = path.join(config.projectRoot, 'city_stations.json');
         cityStationsData = JSON.parse(fs.readFileSync(cityPath, 'utf8'));
     } catch (e) {
-        console.error("[Route Controller]: Failed to load city_stations.json:", e.message);
+        log.error('failed to load city_stations.json', { err: e.message });
         cityStationsData = {};
     }
     return cityStationsData;
@@ -70,7 +71,9 @@ const clamp = (v, lo, hi, dflt) => {
  * Controller to handle route search. Supports "All Stations" searches via CITY: prefix.
  */
 exports.searchRoute = async (req, res) => {
-    const { from, to, date, max_switches, max_wait, sort_by, top_k } = req.body || {};
+    // GET (query string) is CDN-cacheable by URL; POST (JSON body) kept for compatibility.
+    const input = (req.method === 'GET' ? req.query : req.body) || {};
+    const { from, to, date, max_switches, max_wait, sort_by, top_k } = input;
 
     if (!from || !to || !date) {
         return res.status(400).json({ error: "Missing required fields: from, to, date" });

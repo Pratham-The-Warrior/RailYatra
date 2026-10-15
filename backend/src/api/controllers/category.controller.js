@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('../../config');
+const log = require('../../services/logger');
 
 /**
  * Controller for special train categories (e.g. Vande Bharat).
@@ -37,7 +38,7 @@ function loadCategories() {
                 };
             }));
         } catch (e) {
-            console.error(`[Category Controller]: failed to load ${file}: ${e.message}`);
+            log.error('category load failed', { file, err: e.message });
         }
     }
 }

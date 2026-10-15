@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const crypto = require('crypto');
 const config = require('../config');
 const metrics = require('./metrics');
+const log = require('./logger');
 
 /**
  * Engine pool.
@@ -29,7 +30,7 @@ function createWorker(index) {
 }
 
 function startWorker(worker) {
-    console.log(`[Engine ${worker.index}]: spawning ${config.enginePath}`);
+    log.info('engine spawning', { worker: worker.index, path: config.enginePath });
     const proc = spawn(config.enginePath, [config.dataDirPath], { stdio: ['pipe', 'pipe', 'pipe'] });
     worker.proc = proc;
     worker.ready = false;
@@ -37,20 +38,24 @@ function startWorker(worker) {
 
     proc.on('error', (err) => {
         // ENOENT/EACCES etc. Without this handler Node crashes the whole server.
-        console.error(`[Engine ${worker.index}]: failed to start: ${err.message}`);
+        log.error('engine failed to start', { worker: worker.index, err: err.message });
     });
     proc.stdin.on('error', (err) => {
-        console.error(`[Engine ${worker.index}]: stdin error: ${err.message}`);
+        log.error('engine stdin error', { worker: worker.index, err: err.message });
     });
 
     proc.stdout.on('data', (data) => onStdout(worker, data));
+    // Readiness marker may arrive split across stderr chunks; keep a short tail.
+    let stderrTail = '';
     proc.stderr.on('data', (data) => {
         const text = data.toString();
-        if (text.includes('Ready for requests')) {
+        stderrTail = (stderrTail + text).slice(-256);
+        if (!worker.ready && stderrTail.includes('Ready for requests')) {
+            log.info('engine ready', { worker: worker.index });
             worker.ready = true;
             worker.restarts = 0;
         }
-        if (config.engineVerboseLogs) console.log(`[Engine ${worker.index}]: ${text.trim()}`);
+        if (config.engineVerboseLogs) log.info('engine stderr', { worker: worker.index, text: text.trim() });
     });
 
     proc.on('close', (code) => {
@@ -60,7 +65,7 @@ function startWorker(worker) {
         if (shuttingDown) return;
         const delay = Math.min(30000, 1000 * 2 ** worker.restarts++);
         metrics.inc('engine_restarts_total');
-        console.error(`[Engine ${worker.index}]: exited with code ${code}. Restarting in ${delay}ms`);
+        log.error('engine exited, restarting', { worker: worker.index, code, delayMs: delay });
         setTimeout(() => startWorker(worker), delay);
     });
 }
@@ -84,7 +89,7 @@ function onStdout(worker, data) {
         try {
             response = JSON.parse(line);
         } catch (e) {
-            console.error(`[Engine ${worker.index}]: bad JSON from engine: ${e.message}`);
+            log.error('engine sent invalid JSON', { worker: worker.index, err: e.message });
             continue;
         }
         const req = worker.pending.get(response.request_id);
