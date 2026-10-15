@@ -25,7 +25,7 @@
 
 ## Dijkstra Logic
 
-The core navigation engine implements a **Layered Multi-Pass Dijkstra** optimized for scheduled transportation networks. See [`logic.md`](logic.md) for the full technical breakdown.
+The core navigation engine implements a **Layered Multi-Pass Dijkstra** optimized for scheduled transportation networks. See [`docs/logic.md`](docs/logic.md) for the full technical breakdown.
 
 ### 1. Layered Pass Strategy
 The engine runs one independent Dijkstra pass per transfer level (0 → 1 → 2 → … up to `maxSwitches`), stopping as soon as 10 results are collected:
@@ -41,8 +41,32 @@ The `bestCost[station][switches]` table prunes redundant intermediate paths. Cri
 ### 3. Real-World Constraints
 During expansion, every potential connection is validated for:
 - **Chronological Validity**: Departing train must leave *after* the previous train arrives.
-- **Transfer Window**: Wait time ≥ 30 min and ≤ `max_wait` (default: 20 hours).
+- **Transfer Window**: Wait time ≥ 30 min and ≤ `max_wait` (default: 10 hours, capped at 20).
 - **Switch Budget**: Prunes branches exceeding the per-pass `maxSwitches` cap.
+
+---
+
+## Scalability & Operations
+
+See [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit, capacity model, phased plan and load-test results.
+
+- **Engine pool**: `ENGINE_POOL_SIZE` engine processes (default: CPU cores), least-loaded dispatch, crash isolation and auto-respawn.
+- **Caching**: in-process LRU with request coalescing for routes (keyed by weekday), schedules and autocomplete; CDN-friendly `Cache-Control` headers.
+- **Endpoints**: `/healthz` (liveness), `/readyz` (readiness), `/metrics` (Prometheus).
+- **Tests**: `cd backend && npm test` (requires a built engine). CI (`.github/workflows/ci.yml`) also runs a frontend typecheck/build, a load-test gate and a Docker smoke test.
+- **API**: route search is available as `GET /api/route?from=&to=&date=…` (CDN-cacheable; used by the frontend) and as `POST /api/route` with a JSON body.
+- **Logs**: set `LOG_FORMAT=json` for structured one-line JSON logs.
+- **Best trade-offs**: `GET /api/route/pareto?from=&to=&date=&max_switches=&max_wait=` returns, for each number of changes, the earliest possible arrival (exact; see `engine/trip_router.cpp`). Verified by `python3 engine/tests/validate_pareto.py`.
+- **Timetable hot reload**: replace `master_train_data.json` and send `SIGHUP` to the server; a new engine pool is swapped in with zero downtime and caches are invalidated. Responses carry `X-Data-Version`.
+- **Load tests**: `cd loadtest && npm install && node run.js mixed --url http://localhost:3000`.
+- **Deploy**: `deploy/docker-compose.yml` (+ nginx edge) and `deploy/k8s/railyatra.yaml` (HPA, PDB).
+
+| Env var | Default | Purpose |
+|---|---|---|
+| `ENGINE_POOL_SIZE` | CPU cores | Engine processes per instance |
+| `ENGINE_TIMEOUT_MS` | 10000 | Per-request engine timeout |
+| `ENGINE_MAX_QUEUE` | 200 | In-flight requests per engine before shedding with 503 |
+| `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route result cache |
 
 ---
 

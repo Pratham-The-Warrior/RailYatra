@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <algorithm>
 #include "graph.hpp"
 #include "dijkstra.hpp"
+#include "trip_router.hpp"
 #include "json.hpp"
 
 using json = nlohmann::json;
@@ -42,6 +44,7 @@ int main(int argc, char* argv[]) {
 
     // ── Interactive request loop ────────────────────────────
     DijkstraSolver solver(graph);
+    TripRouter tripRouter(graph);   // precomputes normalized timetables once
 
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -73,6 +76,67 @@ int main(int argc, char* argv[]) {
                 
                 std::cout << response.dump() << std::endl;
                 std::cerr << "Schedule Request [" << reqId << "] for train " << tNum << " in " << elapsed.count() << "ms." << std::endl;
+                continue;
+            }
+
+            // ── Pareto Request: earliest arrival per transfer count ──
+            if (type == "pareto") {
+                if (!req.contains("from") || !req.contains("to") || !req.contains("date")) {
+                    throw std::runtime_error("Missing required fields: from, to, date for pareto request");
+                }
+                auto toList = [](const json& v) {
+                    std::vector<std::string> out;
+                    if (v.is_array()) for (auto& c : v) out.push_back(c.get<std::string>());
+                    else out.push_back(v.get<std::string>());
+                    return out;
+                };
+                std::vector<std::string> fromCodes = toList(req["from"]);
+                std::vector<std::string> toCodes   = toList(req["to"]);
+                std::string date = req["date"].get<std::string>();
+                int maxSwitches = req.value("max_switches", 4);
+                int maxWait     = req.value("max_wait", 600);
+
+                // Same validation semantics as the classic route request.
+                auto known = [&](const std::vector<std::string>& codes, std::vector<std::string>& out) {
+                    for (auto c : codes) {
+                        for (auto& ch : c) ch = (char)toupper((unsigned char)ch);
+                        if (graph.getStationId(c) != -1) out.push_back(c);
+                    }
+                };
+                std::vector<std::string> knownFrom, knownTo;
+                known(fromCodes, knownFrom);
+                known(toCodes, knownTo);
+                std::string validationError;
+                if (knownFrom.empty()) validationError = "Unknown source station: " + (fromCodes.empty() ? std::string() : fromCodes[0]);
+                else if (knownTo.empty()) validationError = "Unknown destination station: " + (toCodes.empty() ? std::string() : toCodes[0]);
+                else {
+                    bool allSame = true;
+                    for (const auto& f : knownFrom)
+                        if (std::find(knownTo.begin(), knownTo.end(), f) == knownTo.end()) { allSame = false; break; }
+                    if (allSame) validationError = "Source and destination stations cannot be the same.";
+                }
+                if (!validationError.empty()) {
+                    json err;
+                    err["request_id"] = reqId;
+                    err["error"] = validationError;
+                    std::cout << err.dump() << std::endl;
+                    continue;
+                }
+
+                auto results = tripRouter.paretoRoutes(knownFrom, knownTo, date, maxSwitches, maxWait);
+
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::milli> elapsed = endTime - startTime;
+
+                json response;
+                response["request_id"] = reqId;
+                response["results"]    = DijkstraSolver::toJson(results);
+                response["elapsed_ms"] = elapsed.count();
+                std::cout << response.dump() << std::endl;
+
+                std::cerr << "Pareto [" << reqId << "] " << fromCodes.size() << " sources -> "
+                          << toCodes.size() << " dests in " << elapsed.count() << "ms. Found "
+                          << results.size() << " routes." << std::endl;
                 continue;
             }
 

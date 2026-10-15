@@ -51,3 +51,6 @@ venv/
 .env
 backend/venv/
 backend/src/scripts/__pycache__/
+# Linux engine binary
+engine/route_engine
+loadtest/node_modules

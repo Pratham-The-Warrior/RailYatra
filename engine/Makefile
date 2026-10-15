@@ -2,11 +2,11 @@
 CXX = g++
 CXXFLAGS = -O2 -std=c++17 -static -static-libgcc -static-libstdc++
 TARGET = route_engine
-SOURCES = main.cpp graph.cpp dijkstra.cpp
+SOURCES = main.cpp graph.cpp dijkstra.cpp trip_router.cpp
 
 all: $(TARGET)
 
-$(TARGET): $(SOURCES)
+$(TARGET): $(SOURCES) $(wildcard *.hpp)
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $(TARGET)
 
 clean:

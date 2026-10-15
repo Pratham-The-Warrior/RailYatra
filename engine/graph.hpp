@@ -21,7 +21,8 @@ struct ScheduleStop {
     int stationId;
     int arrivalMin;     // -1 for origin
     int departureMin;   // -1 for terminus
-    int dayOfJourney;   // 1-based
+    int dayOfJourney;     // 1-based day of ARRIVAL (or departure at the origin)
+    int depDayOfJourney;  // 1-based day of DEPARTURE (differs if the halt spans midnight)
     int distanceKm;
 };
 

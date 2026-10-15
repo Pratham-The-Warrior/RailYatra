@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build, test and load-test gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            loadtest/package-lock.json
+
+      - name: Build engine
+        run: make -C engine -j"$(nproc)"
+
+      - name: Validate routing engines against the raw timetable
+        run: python3 engine/tests/validate_pareto.py 100 1
+
+      - name: Backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Backend integration tests
+        run: npm test
+        working-directory: backend
+
+      - name: Frontend typecheck and build
+        working-directory: frontend
+        run: |
+          npm ci
+          npx tsc --noEmit -p tsconfig.app.json
+          npm run build
+
+      - name: Start server
+        working-directory: backend
+        run: |
+          node server.js > ../server.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3000/readyz && exit 0
+            sleep 1
+          done
+          echo "server never became ready"; cat ../server.log; exit 1
+
+      - name: Load-test gate (no errors, p99 under budget)
+        working-directory: loadtest
+        run: |
+          npm ci
+          node run.js mixed --connections 50 --duration 15 --max-p99 1000 --json results-ci.json
+
+      - name: Upload load-test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loadtest-results
+          path: |
+            loadtest/results-ci.json
+            server.log
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t railyatra:ci .
+      - name: Smoke test container
+        run: |
+          docker run -d --name ry -p 3000:3000 railyatra:ci
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3000/readyz && break
+            sleep 1
+          done
+          curl -sf -o route.json "http://localhost:3000/api/route?from=NDLS&to=CSMT&date=2026-10-20&top_k=3"
+          node -e "const r=require('./route.json'); if(!Array.isArray(r)||!r.length) process.exit(1); console.log(r.length + ' routes OK')"
+          docker logs ry 2>&1 | tail -20

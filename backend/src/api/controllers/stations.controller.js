@@ -1,6 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const Fuse = require('fuse.js');
+const { LruCache } = require('../../services/cache');
+const log = require('../../services/logger');
+
+// Fuse.js fuzzy search costs a few ms per query; autocomplete prefixes are
+// extremely repetitive, so cache the final response per normalized query.
+const searchCache = new LruCache({ name: 'stations', maxEntries: 20000, ttlMs: 60 * 60 * 1000 });
 
 let stationCache = null;
 let fuseInstance = null;
@@ -35,7 +41,7 @@ function loadCityStations() {
             ]
         });
     } catch (e) {
-        console.error("[City Stations]: Failed to load city_stations.json:", e.message);
+        log.error('failed to load city_stations.json', { err: e.message });
         cityStationsData = {};
     }
 }
@@ -45,8 +51,12 @@ function loadCityStations() {
  * Now also injects "City - All Stations" entries at the top when relevant.
  */
 exports.getStations = async (req, res) => {
-    const q = (req.query.q || '');
+    const q = String(req.query.q || '').trim().toLowerCase().slice(0, 64);
     if (q.length < 2) return res.json([]);
+    res.set('Cache-Control', 'public, max-age=3600');
+
+    const cached = searchCache.get(q);
+    if (cached) return res.json(cached);
 
     try {
         if (!stationCache) {
@@ -94,9 +104,11 @@ exports.getStations = async (req, res) => {
         const filtered = results.slice(0, 10).map(result => result.item);
 
         // City "All Stations" entries go first, then regular stations
-        res.json([...cityResults, ...filtered]);
+        const body = [...cityResults, ...filtered];
+        searchCache.set(q, body);
+        res.json(body);
     } catch (e) {
-        console.error("[Stations Controller Error]:", e);
+        log.error('station search failed', { err: e.message });
         res.status(500).json({ error: "Failed to fetch stations" });
     }
 };

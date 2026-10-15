@@ -1,0 +1,16 @@
+{
+  "scenario": "route",
+  "connections": 100,
+  "duration": 15,
+  "zipf": 0,
+  "rps_avg": 954.94,
+  "rps_p50": 944,
+  "latency_p50_ms": 78,
+  "latency_p90_ms": 196,
+  "latency_p99_ms": 353,
+  "latency_max_ms": 628,
+  "total": 14324,
+  "non2xx": 0,
+  "errors": 0,
+  "timeouts": 0
+}

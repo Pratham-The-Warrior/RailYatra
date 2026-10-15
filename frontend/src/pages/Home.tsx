@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Route, SearchParams } from "@/types";
 import { SearchForm } from "@/components/SearchForm";
 import { RouteCard } from "@/components/RouteCard";
 import { RouteCardCompact } from "@/components/RouteCardCompact";
 import { RouteCardMobile } from "@/components/RouteCardMobile";
+import { BestTradeoffs } from "@/components/BestTradeoffs";
 import { LayoutToggle, ViewLayout } from "@/components/LayoutToggle";
 import { Calendar, History, ArrowRight, Star, Activity, ChevronDown, CheckCircle2 } from "lucide-react";
 
@@ -28,6 +29,8 @@ interface HomeProps {
 
 export function Home({ onNavigate }: HomeProps) {
     const [routes, setRoutes] = useState<Route[]>([]);
+    const [tradeoffs, setTradeoffs] = useState<Route[]>([]);
+    const searchSeq = useRef(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searched, setSearched] = useState(false);
@@ -60,7 +63,24 @@ export function Home({ onNavigate }: HomeProps) {
         try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
     };
 
+    // Best trade-offs load independently: a failure here never affects the main results.
+    const loadTradeoffs = async (params: SearchParams, seq: number) => {
+        try {
+            const query = new URLSearchParams({
+                from: params.from, to: params.to, date: params.date,
+                max_switches: String(params.max_switches), max_wait: String(params.max_wait),
+            });
+            const res = await fetch(`/api/route/pareto?${query}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (seq === searchSeq.current && Array.isArray(data)) setTradeoffs(data);
+        } catch { /* optional panel; ignore */ }
+    };
+
     const handleSearch = async (params: SearchParams, fromDisplay?: string, toDisplay?: string) => {
+        const seq = ++searchSeq.current;
+        setTradeoffs([]);
+        loadTradeoffs(params, seq);
         setRoutes([]);
         setSearched(false);
         setLoading(true);
@@ -70,13 +90,11 @@ export function Home({ onNavigate }: HomeProps) {
         try {
             let response: Response;
             try {
-                response = await fetch("/api/route", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(params),
-                });
+                // GET so identical searches are cacheable by URL at the CDN and browser.
+                const query = new URLSearchParams(
+                    Object.entries(params).map(([k, v]) => [k, String(v)])
+                );
+                response = await fetch(`/api/route?${query}`);
             } catch {
                 throw new Error("Unable to connect to the server. Sorry for the inconvenience.");
             }
@@ -294,6 +312,8 @@ export function Home({ onNavigate }: HomeProps) {
                                 <LayoutToggle layout={viewLayout} onToggle={setViewLayout} />
                             </div>
                         </div>
+
+                        {tradeoffs.length > 1 && <BestTradeoffs options={tradeoffs} />}
 
                         {/* Unified togglable list/cards for all screens */}
                         <AnimatePresence mode="wait">
