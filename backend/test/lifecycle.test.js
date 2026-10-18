@@ -219,7 +219,8 @@ test('only successful cacheable responses are cacheable by CDNs; everything else
     assert.match(await cc('/api/stations?q=delhi'), /^public/);
     assert.match(await cc('/api/schedule/12138'), /^public/);
     assert.match(await cc('/api/category/vandebharat'), /^public/);
-    for (const p of ['/api/health', '/readyz', '/healthz', '/metrics', '/api/livestatus/12138',
+    assert.match(await cc('/api/livestatus/12138'), /^public, max-age=30$/);
+    for (const p of ['/api/health', '/readyz', '/healthz', '/metrics', '/api/livestatus/99999',
         '/api/route?from=NDLS', '/api/schedule/abc', '/api/schedule/99999', '/api/category/nope', '/api/nothing-here']) {
         assert.strictEqual(await cc(p), 'no-store', `${p} must not be cacheable`);
     }

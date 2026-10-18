@@ -41,7 +41,7 @@ export const SearchHero: React.FC<SearchHeroProps> = ({
                         type="text"
                         value={trainNumber}
                         onChange={e => setTrainNumber(e.target.value)}
-                        placeholder="Enter Train Number or Name (e.g. 12001 or Bhopal Shatabdi)"
+                        placeholder="Enter Train Number (e.g. 12001)"
                         className="w-full bg-transparent border-none text-slate-800 text-base font-medium placeholder:text-slate-300 focus:outline-hidden focus:ring-0 px-2 py-3"
                     />
                     <button

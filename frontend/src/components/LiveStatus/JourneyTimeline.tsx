@@ -6,10 +6,11 @@ interface JourneyTimelineProps {
     statusData: LiveStatusResponse;
     activeIdx: number;
     isMoving?: boolean;
+    isEstimate?: boolean;
 }
 
 export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
-    statusData, activeIdx, isMoving = false
+    statusData, activeIdx, isMoving = false, isEstimate = false
 }) => {
     const itinerary = statusData.itinerary;
     return (
@@ -57,6 +58,10 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
                             const schArr = formatTime(stop.timings.sch_arr !== 'SOURCE' ? stop.timings.sch_arr : stop.timings.sch_dep);
                             const actArr = formatTime(stop.timings.act_arr !== 'SOURCE' ? stop.timings.act_arr : stop.timings.act_dep);
                             const actDep = formatTime(stop.timings.act_dep !== 'DEST' ? stop.timings.act_dep : stop.timings.act_arr);
+                            // Timetable estimates: the second column is the scheduled departure
+                            // (actual times are unknown); the destination has none.
+                            const secondLabel = isEstimate ? 'DEP' : isPassed ? 'ACTUAL' : 'EXPECTED';
+                            const secondTime = isEstimate ? (stop.is_destination ? '--' : actDep) : actArr;
 
                             const arrivalDate = parseTimeAndDate(stop.timings.sch_arr !== 'SOURCE' ? stop.timings.sch_arr : stop.timings.sch_dep).date;
 
@@ -128,22 +133,27 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
                                                             </div>
                                                         )}
                                                         <div className="flex flex-col items-center min-w-[70px] xl:min-w-[90px]">
-                                                            <p className="text-[10px] font-black text-orange-600/60 uppercase tracking-widest mb-1.5">ARRIVED</p>
+                                                            <p className="text-[10px] font-black text-orange-600/60 uppercase tracking-widest mb-1.5">{stop.is_source ? 'DEPARTS' : 'ARRIVED'}</p>
                                                             <p className="text-[20px] md:text-[28px] font-black text-orange-950 leading-none mb-2">{actArr}</p>
                                                             <span className={`${stop.is_delayed ? 'bg-red-500' : 'bg-emerald-500'} text-white text-[8px] md:text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider shadow-xs`}>
                                                                 {formatStatus(stop.status)}
                                                             </span>
                                                         </div>
 
-                                                        <div className="w-px h-10 xl:h-14 bg-orange-200 opacity-50" />
+                                                        {/* Source and destination have a single time, shown above */}
+                                                        {!stop.is_source && !stop.is_destination && (
+                                                            <>
+                                                                <div className="w-px h-10 xl:h-14 bg-orange-200 opacity-50" />
 
-                                                        <div className="flex flex-col items-center min-w-[70px] xl:min-w-[90px]">
-                                                            <p className="text-[10px] font-black text-orange-600/60 uppercase tracking-widest mb-1.5">EXPECTED DEP</p>
-                                                            <p className="text-[20px] md:text-[28px] font-black text-orange-950 leading-none mb-2">{actDep}</p>
-                                                            <p className="text-[8px] md:text-[9px] font-black uppercase text-orange-600/70 tracking-widest">
-                                                                HALT: {stop.haltMins || 0} MIN
-                                                            </p>
-                                                        </div>
+                                                                <div className="flex flex-col items-center min-w-[70px] xl:min-w-[90px]">
+                                                                    <p className="text-[10px] font-black text-orange-600/60 uppercase tracking-widest mb-1.5">{isEstimate ? 'DEPARTS' : 'EXPECTED DEP'}</p>
+                                                                    <p className="text-[20px] md:text-[28px] font-black text-orange-950 leading-none mb-2">{actDep}</p>
+                                                                    <p className="text-[8px] md:text-[9px] font-black uppercase text-orange-600/70 tracking-widest">
+                                                                        HALT: {stop.haltMins || 0} MIN
+                                                                    </p>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ) : (
@@ -178,9 +188,9 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
                                                             </div>
                                                             <div className="flex flex-col items-center min-w-[70px] xl:min-w-[90px]">
                                                                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                                                                    {isPassed ? 'ACTUAL' : 'EXPECTED'}
+                                                                    {secondLabel}
                                                                 </p>
-                                                                <p className="text-[15px] font-black text-slate-950 tracking-tight">{actArr}</p>
+                                                                <p className="text-[15px] font-black text-slate-950 tracking-tight">{secondTime}</p>
                                                             </div>
                                                             <div className="min-w-[120px] flex justify-end">
                                                                 <span className={`${stop.is_delayed ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'} text-[9px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-widest text-center min-w-[100px] border`}>
@@ -223,8 +233,8 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
                                                                 <span className="font-black text-slate-950">{schArr}</span>
                                                             </div>
                                                             <div className="flex items-center gap-1.5">
-                                                                <span className="text-[8px] font-black text-slate-500 uppercase">ACT</span>
-                                                                <span className="font-black text-slate-950">{actArr}</span>
+                                                                <span className="text-[8px] font-black text-slate-500 uppercase">{isEstimate ? 'DEP' : 'ACT'}</span>
+                                                                <span className="font-black text-slate-950">{secondTime}</span>
                                                                 {stop.is_delayed && stop.delay_mins !== undefined && (
                                                                     <span className="text-[9px] font-bold text-slate-500 ml-0.5">({stop.delay_mins} MIN)</span>
                                                                 )}
@@ -277,7 +287,7 @@ export const JourneyTimeline: React.FC<JourneyTimelineProps> = ({
                                                         )}
                                                     </div>
                                                     <div className="hidden sm:flex flex-col items-end shrink-0">
-                                                        <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">EXPECTED ARRIVAL</p>
+                                                        <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">{isEstimate ? 'SCHEDULED ARRIVAL' : 'EXPECTED ARRIVAL'}</p>
                                                         <p className="text-[14px] font-black text-blue-700">{formatTime(itinerary[stopIdx + 1].timings.act_arr)}</p>
                                                     </div>
                                                 </div>

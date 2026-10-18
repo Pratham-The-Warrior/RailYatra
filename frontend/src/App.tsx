@@ -40,7 +40,7 @@ function App() {
                 <Home onNavigate={handleNavigate} />
             )}
 
-            <Footer />
+            <Footer onNavigate={(page) => handleNavigate(page)} />
         </div>
     );
 }

@@ -1,7 +1,30 @@
 import React from 'react';
 import { Globe, Shield, Zap } from 'lucide-react';
+import { DEVELOPER_URL, ISSUES_URL, REPO_URL } from '@/config/links';
 
-export const Footer: React.FC = () => {
+type Page = 'home' | 'schedules' | 'live-status';
+
+interface FooterProps {
+    onNavigate: (page: Page) => void;
+}
+
+const linkClass = 'hover:text-orange-400 transition-colors';
+
+function NavLink({ page, label, onNavigate }: { page: Page; label: string; onNavigate: FooterProps['onNavigate'] }) {
+    return (
+        <li>
+            <button type="button" className={linkClass} onClick={() => { onNavigate(page); window.scrollTo({ top: 0 }); }}>
+                {label}
+            </button>
+        </li>
+    );
+}
+
+function ExternalLink({ href, label }: { href: string; label: string }) {
+    return <li><a href={href} target="_blank" rel="noopener noreferrer" className={linkClass}>{label}</a></li>;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     return (
         <footer className="bg-slate-900 pt-16 md:pt-20 pb-10 mt-16 md:mt-20">
             <div className="max-w-7xl mx-auto px-6">
@@ -24,7 +47,7 @@ export const Footer: React.FC = () => {
                         </p>
                         <div className="flex gap-3">
                             {[Globe, Shield, Zap].map((Icon, i) => (
-                                <div key={i} className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 hover:text-orange-400 hover:border-orange-500/40 transition-all cursor-pointer">
+                                <div key={i} aria-hidden="true" className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
                                     <Icon size={16} />
                                 </div>
                             ))}
@@ -35,8 +58,9 @@ export const Footer: React.FC = () => {
                     <div>
                         <h4 className="font-bold text-orange-400 text-xs uppercase tracking-widest mb-5">Quick Links</h4>
                         <ul className="stack-y-3 text-sm text-slate-400 font-medium">
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Home</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Train Schedule</a></li>
+                            <NavLink page="home" label="Home" onNavigate={onNavigate} />
+                            <NavLink page="schedules" label="Train Schedules" onNavigate={onNavigate} />
+                            <NavLink page="live-status" label="Live Status" onNavigate={onNavigate} />
                         </ul>
                     </div>
 
@@ -44,10 +68,8 @@ export const Footer: React.FC = () => {
                     <div>
                         <h4 className="font-bold text-orange-400 text-xs uppercase tracking-widest mb-5">Support</h4>
                         <ul className="stack-y-3 text-sm text-slate-400 font-medium">
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Help Center</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Refund Rules</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Terms of Service</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Privacy Policy</a></li>
+                            <ExternalLink href={ISSUES_URL} label="Report an Issue" />
+                            <ExternalLink href={`${REPO_URL}#readme`} label="Documentation" />
                         </ul>
                     </div>
 
@@ -55,9 +77,8 @@ export const Footer: React.FC = () => {
                     <div>
                         <h4 className="font-bold text-orange-400 text-xs uppercase tracking-widest mb-5">Connect</h4>
                         <ul className="stack-y-3 text-sm text-slate-400 font-medium">
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">GitHub</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Twitter / X</a></li>
-                            <li><a href="#" className="hover:text-orange-400 transition-colors">Contact Us</a></li>
+                            <ExternalLink href={REPO_URL} label="GitHub" />
+                            <ExternalLink href={DEVELOPER_URL} label="LinkedIn" />
                         </ul>
                     </div>
                 </div>
@@ -68,7 +89,7 @@ export const Footer: React.FC = () => {
 
                     {/* Premium "Made by" badge */}
                     <a
-                        href="https://www.linkedin.com/in/pratham-sarda-8a6a88318/"
+                        href={DEVELOPER_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group relative"

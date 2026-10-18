@@ -8,6 +8,7 @@ import {
 // Assuming titleCase and RecentSearch type are imported from Schedules.tsx or types.ts
 import { titleCase, RecentSearch } from '../../pages/Schedules';
 import { BackButton } from '../Common/BackButton';
+import { PNR_STATUS_URL } from '@/config/links';
 
 interface SchedulesLandingProps {
     trainNumber: string;
@@ -15,7 +16,7 @@ interface SchedulesLandingProps {
     fetchSchedule: (num: string) => void;
     handleSubmit: (e: React.FormEvent) => void;
     recents: RecentSearch[];
-    onNavigate?: (page: 'home' | 'schedules' | 'category-routes') => void;
+    onNavigate?: (page: 'home' | 'schedules' | 'live-status' | 'category-routes', trainNumber?: string | null) => void;
 }
 
 const popularTrains = [
@@ -148,9 +149,6 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                     <Sparkles className="w-[18px] h-[18px] md:w-5 md:h-5 text-orange-500" />
                                     Popular Trains
                                 </h2>
-                                <button className="text-xs md:text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors">
-                                    View all
-                                </button>
                             </div>
 
                             {/* Horizontal scroll on mobile, 2-col grid on larger */}
@@ -269,8 +267,8 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                     },
                                     {
                                         num: '3',
-                                        title: 'Offline Access:',
-                                        desc: 'Save frequent schedules for offline viewing while traveling.'
+                                        title: 'Recent searches:',
+                                        desc: 'Trains you look up are kept on this device for one-tap access.'
                                     },
                                 ].map(tip => (
                                     <div key={tip.num} className="flex gap-2.5 md:gap-3">
@@ -289,11 +287,11 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                         <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-2xl p-5 md:p-6 text-white shadow-lg shadow-orange-500/20">
                             <h3 className="text-base md:text-lg font-bold mb-1.5 md:mb-2">Planning a Trip?</h3>
                             <p className="text-orange-100 text-xs md:text-sm leading-relaxed md:leading-5 mb-4 md:mb-5">
-                                Check PNR status and booking availability in one click.
+                                Check PNR status on the official Indian Railways enquiry site.
                             </p>
-                            <button className="w-full bg-white text-orange-600 font-bold text-sm md:text-[15px] py-3 md:py-3.5 rounded-xl hover:bg-orange-50 transition-colors active:scale-[0.97] shadow-xs">
-                                Check PNR Now
-                            </button>
+                            <a href={PNR_STATUS_URL} target="_blank" rel="noopener noreferrer" className="block text-center w-full bg-white text-orange-600 font-bold text-sm md:text-[15px] py-3 md:py-3.5 rounded-xl hover:bg-orange-50 transition-colors active:scale-[0.97] shadow-xs">
+                                Check PNR Status
+                            </a>
                         </div>
                     </motion.div>
                 </div>

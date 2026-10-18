@@ -48,18 +48,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                             {item.label}
                         </button>
                     ))}
-                    {['My Bookings', 'Alerts'].map((item) => (
-                        <a
-                            key={item}
-                            href="#"
-                            className="text-sm font-medium text-slate-800 hover:text-orange-500 transition-colors"
-                        >
-                            {item}
-                        </a>
-                    ))}
-                    <button className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-6 py-2 rounded-lg shadow-xs transition-colors">
-                        Login
-                    </button>
                 </div>
 
                 {/* Mobile hamburger */}
@@ -95,20 +83,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                                     {item.label}
                                 </button>
                             ))}
-                            {['My Bookings', 'Alerts'].map(item => (
-                                <a
-                                    key={item}
-                                    href="#"
-                                    className="block w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                                >
-                                    {item}
-                                </a>
-                            ))}
-                            <div className="pt-2 pb-1 px-3">
-                                <button className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow-xs transition-colors">
-                                    Login
-                                </button>
-                            </div>
                         </div>
                     </motion.div>
                 )}

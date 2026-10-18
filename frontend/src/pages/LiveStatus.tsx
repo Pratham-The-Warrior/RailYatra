@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    Search, Train, Clock,
+    Search,
     Activity, Radio,
     AlertTriangle, HelpCircle
 } from 'lucide-react';
@@ -38,6 +38,7 @@ interface ItineraryItem {
 
 interface LiveStatusMeta {
     train_no: string;
+    train_name?: string;
     start_date: string;
     current_location: string;
     fetched_at: string;
@@ -46,6 +47,9 @@ interface LiveStatusMeta {
 }
 
 export interface LiveStatusResponse {
+    /** 'timetable': estimated from the schedule; no delays or platforms are known. */
+    source?: 'timetable' | 'live';
+    notice?: string;
     meta: LiveStatusMeta;
     itinerary: ItineraryItem[];
     activeIdx: number;
@@ -272,58 +276,22 @@ export const LiveStatus: React.FC<LiveStatusProps> = ({ onNavigate, initialTrain
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
                         className="text-slate-500 font-medium text-sm"
                     >
-                        Fetching live status for {trainNumber}…
+                        Finding train {trainNumber}…
                     </motion.p>
                     <motion.p
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
                         className="text-slate-400 text-xs mt-1"
                     >
-                        Connecting to official servers
+                        Estimating its position from the timetable
                     </motion.p>
                 </motion.div>
             </div>
         );
     }
-    if (!statusData) {
-        return (
-            <div className="min-h-screen pt-24 pb-20 bg-[#f8fafc] flex items-center justify-center">
-                <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="max-w-md w-full mx-auto px-6 text-center"
-                >
-                    <div className="w-20 h-20 bg-orange-50 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-orange-500/10">
-                        <Search className="w-10 h-10 text-orange-500" />
-                    </div>
-                    <h2 className="font-outfit text-3xl font-black text-slate-900 mb-4 tracking-tight">Track Live Status</h2>
-                    <p className="text-slate-500 text-base leading-relaxed mb-10">
-                        Enter a train number above to get real-time location, platform info, and delay updates.
-                    </p>
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-xs">
-                            <Clock className="w-5 h-5 text-emerald-500" />
-                            <div className="text-left">
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">REAL-TIME DATA</p>
-                                <p className="text-sm font-bold text-slate-700">Official NTES Updates</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-xs">
-                            <Train className="w-5 h-5 text-orange-500" />
-                            <div className="text-left">
-                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">LIVE TIMELINE</p>
-                                <p className="text-sm font-bold text-slate-700">Full Route Tracking</p>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-        );
-    }
-
     /* ═══════════════════════════════════════════════════════════════════ */
     /*  RESULTS VIEW - FINAL V4 DESIGN                                     */
     /* ═══════════════════════════════════════════════════════════════════ */
+    if (!statusData) return null;
     return (
         <TrackingResults
             statusData={statusData}

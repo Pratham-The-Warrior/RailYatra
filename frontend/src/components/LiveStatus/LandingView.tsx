@@ -27,7 +27,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 {/* Live Network Status Indicator */}
                 <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 text-[10px] sm:text-[11px] font-bold px-3 py-1.5 rounded-md mb-4 sm:mb-6 tracking-[0.15em] uppercase border border-emerald-100/50 shadow-xs">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    REAL-TIME TRAIN TRACKING
+                    TIMETABLE-BASED TRAIN TRACKING
                 </div>
 
                 <SearchHero

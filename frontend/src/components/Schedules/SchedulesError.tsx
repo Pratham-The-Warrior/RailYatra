@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Train, Search, MapPin, HelpCircle } from 'lucide-react';
+import { ISSUES_URL } from '@/config/links';
 
 interface SchedulesErrorProps {
     error: string;
@@ -58,10 +59,10 @@ export const SchedulesError: React.FC<SchedulesErrorProps> = ({ error, setError 
                 <div className="border-t border-slate-100 pt-5">
                     <p className="text-xs text-slate-400 mb-1 flex items-center justify-center gap-1.5">
                         <HelpCircle className="w-3.5 h-3.5" />
-                        Need assistance with your booking?
+                        Think this train is missing from our timetable?
                     </p>
-                    <a href="#" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors">
-                        Contact RailYatra Support
+                    <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors">
+                        Report missing data
                     </a>
                 </div>
             </motion.div>

@@ -88,21 +88,21 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                             <div className="bg-slate-custom text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg tracking-widest shadow-xs">
                                 22436
                             </div>
-                            <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-[10px] uppercase tracking-widest">
-                                <Activity className="w-3.5 h-3.5" /> LIVE
+                            <div className="flex items-center gap-1.5 text-orange-500 font-bold text-[10px] uppercase tracking-widest">
+                                <Activity className="w-3.5 h-3.5" /> TRACK
                             </div>
                         </div>
                         <h3 className="text-[15px] sm:text-[17px] font-bold text-slate-900 leading-snug mb-1">
                             NDLS - BSB Vande Bharat
                         </h3>
                         <p className="text-[11px] sm:text-xs font-medium text-slate-500 mb-4 sm:mb-6">
-                            Arriving at <strong className="text-slate-700">Kanpur Central</strong>
+                            <strong className="text-slate-700">New Delhi</strong> → <strong className="text-slate-700">Varanasi</strong>
                         </p>
 
                         <div className="border-t border-dashed border-slate-200 pt-4 sm:pt-5 flex items-center justify-between">
                             <div>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">STATUS</p>
-                                <p className="text-[13px] font-bold text-emerald-500">On Time</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">POSITION</p>
+                                <p className="text-[13px] font-bold text-slate-700">As per timetable</p>
                             </div>
                             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
                                 <ArrowRight className="w-4 h-4" />
@@ -116,21 +116,21 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                             <div className="bg-slate-custom text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg tracking-widest shadow-xs">
                                 12951
                             </div>
-                            <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-[10px] uppercase tracking-widest">
-                                <Activity className="w-3.5 h-3.5" /> LIVE
+                            <div className="flex items-center gap-1.5 text-orange-500 font-bold text-[10px] uppercase tracking-widest">
+                                <Activity className="w-3.5 h-3.5" /> TRACK
                             </div>
                         </div>
                         <h3 className="text-[15px] sm:text-[17px] font-bold text-slate-900 leading-snug mb-1">
                             Mumbai Rajdhani Exp
                         </h3>
                         <p className="text-[11px] sm:text-xs font-medium text-slate-500 mb-4 sm:mb-6">
-                            Departed <strong className="text-slate-700">Kota Jn</strong>
+                            <strong className="text-slate-700">Mumbai Central</strong> → <strong className="text-slate-700">New Delhi</strong>
                         </p>
 
                         <div className="border-t border-dashed border-slate-200 pt-4 sm:pt-5 flex items-center justify-between">
                             <div>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">STATUS</p>
-                                <p className="text-[13px] font-bold text-emerald-500">On Time</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">POSITION</p>
+                                <p className="text-[13px] font-bold text-slate-700">As per timetable</p>
                             </div>
                             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
                                 <ArrowRight className="w-4 h-4" />
@@ -139,17 +139,17 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                     </div>
                 </div>
 
-                {/* Mobile only: Recent Searches appears BEFORE Journey Insights */}
+                {/* Mobile only: Recent Searches appears BEFORE How Tracking Works */}
                 <div className="lg:hidden">
                     {recentSearchesCard}
                 </div>
 
-                {/* Journey Insights Complete Block */}
+                {/* How Tracking Works */}
                 <div className="bg-[#f8fafc] rounded-2xl sm:rounded-[32px] p-5 sm:p-8 relative overflow-hidden mt-2 sm:mt-4 shadow-xs border border-slate-100">
                     <div className="absolute -right-16 -bottom-16 pointer-events-none opacity-[0.03] text-9xl leading-none">
                         <Activity className="w-72 h-72" />
                     </div>
-                    <h3 className="text-[16px] sm:text-[18px] font-bold text-slate-900 tracking-tight font-display mb-5 sm:mb-8">Journey Insights</h3>
+                    <h3 className="text-[16px] sm:text-[18px] font-bold text-slate-900 tracking-tight font-display mb-5 sm:mb-8">How Tracking Works</h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-8 relative z-10">
                         {/* Insight 1 */}
@@ -160,9 +160,9 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                                 </svg>
                             </div>
                             <div>
-                                <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Peak Demand</h4>
+                                <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Timetable-based</h4>
                                 <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed sm:leading-4 font-medium">
-                                    High traffic observed on Delhi-Mumbai route for next 48 hours.
+                                    Positions are estimated from the published schedule, minute by minute.
                                 </p>
                             </div>
                         </div>
@@ -175,9 +175,9 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                                 </svg>
                             </div>
                             <div>
-                                <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Reliability Score</h4>
+                                <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Refresh anytime</h4>
                                 <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed sm:leading-4 font-medium">
-                                    Shatabdi Express trains maintain a 99% punctuality rate this week.
+                                    Each refresh recalculates where the train should be right now.
                                 </p>
                             </div>
                         </div>
@@ -190,9 +190,9 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                                 </svg>
                             </div>
                             <div>
-                                <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Weather Alert</h4>
+                                <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Delays not shown</h4>
                                 <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed sm:leading-4 font-medium">
-                                    Mild fog reported near North stations. No major delays expected.
+                                    For actual running and delays, confirm on the official NTES service.
                                 </p>
                             </div>
                         </div>

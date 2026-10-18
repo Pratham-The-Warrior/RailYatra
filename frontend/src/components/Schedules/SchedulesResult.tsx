@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Calendar, FileText, ArrowRight,
-    Wifi, UtensilsCrossed, Plug, Cross, Activity, HelpCircle,
+    Activity, HelpCircle,
     Clock, MapPin, LayoutList, LayoutGrid
 } from 'lucide-react';
 import { TrainSchedule, ScheduleItem } from '../../pages/Schedules'; // Assume types are in types.ts or exported from Schedules.tsx
 import { titleCase, computeHalt } from '../../pages/Schedules';
 import { BackButton } from '../Common/BackButton';
+import { IRCTC_SEARCH_URL, ISSUES_URL } from '@/config/links';
 
 interface SchedulesResultProps {
     schedule: TrainSchedule;
@@ -16,22 +17,16 @@ interface SchedulesResultProps {
     handleSubmit: (e: React.FormEvent) => void;
     handleBack: () => void;
     resultsRef: React.RefObject<HTMLDivElement | null>;
+    onLiveStatus?: () => void;
 }
 
 export const SchedulesResult: React.FC<SchedulesResultProps> = ({
-    schedule, trainNumber, setTrainNumber, handleSubmit, handleBack, resultsRef
+    schedule, trainNumber, setTrainNumber, handleSubmit, handleBack, resultsRef, onLiveStatus
 }) => {
     const [mobileView, setMobileView] = useState<'list' | 'cards'>('list');
     const isDailyService = schedule?.operating_days ? Object.values(schedule.operating_days).every(Boolean) : false;
     const src = schedule?.schedule?.[0];
     const dest = schedule?.schedule?.[schedule.schedule.length - 1];
-
-    const amenities = [
-        { icon: UtensilsCrossed, label: 'Onboard Catering', color: '#ea580c' },
-        { icon: Wifi, label: 'High Speed WiFi', color: '#2563eb' },
-        { icon: Plug, label: 'Charging Points', color: '#ca8a04' },
-        { icon: Cross, label: 'First Aid', color: '#dc2626' },
-    ];
 
     return (
         <div className="min-h-screen pt-20 md:pt-24 pb-12 md:pb-20 bg-[#f5f6f8]">
@@ -78,16 +73,17 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                 )}
                             </div>
                             <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 md:gap-2.5 shrink-0 mt-4 lg:mt-0">
-                                <button className="inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all shadow-xs shadow-orange-500/15 active:scale-[0.97]">
+                                <a href={IRCTC_SEARCH_URL} target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all shadow-xs shadow-orange-500/15 active:scale-[0.97]">
                                     <Calendar className="w-4 h-4" />
-                                    Check Availability
-                                </button>
-                                <button className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all active:scale-[0.97]">
+                                    Check Availability on IRCTC
+                                </a>
+                                {onLiveStatus && <button type="button" onClick={onLiveStatus} className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all active:scale-[0.97]">
                                     <Activity className="w-4 h-4" />
                                     Live Status
-                                </button>
-                                {schedule!.hasPdf && (
-                                    <a href="#" target="_blank" rel="noopener noreferrer"
+                                </button>}
+                                {schedule!.pdfUrl && (
+                                    <a href={schedule!.pdfUrl} target="_blank" rel="noopener noreferrer"
                                         className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-5 py-2.5 rounded-lg text-sm transition-all active:scale-[0.97]">
                                         <FileText className="w-4 h-4" />
                                         Download PDF
@@ -95,16 +91,6 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                 )}
                             </div>
                         </div>
-                    </div>
-
-                    {/* ═══════ AMENITY STRIP ═══════ */}
-                    <div className="flex flex-wrap items-center gap-x-4 md:gap-x-8 gap-y-2 md:gap-y-3 pl-1 mb-5 md:mb-8">
-                        {amenities.map(({ icon: Icon, label, color }) => (
-                            <div key={label} className="flex items-center gap-1.5 md:gap-2.5 text-xs md:text-sm font-medium text-slate-600">
-                                <Icon className="w-4 h-4 md:w-[18px] md:h-[18px]" style={{ color }} />
-                                <span>{label}</span>
-                            </div>
-                        ))}
                     </div>
 
                     {/* ═══════ MAIN GRID ═══════ */}
@@ -336,11 +322,11 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                         <HelpCircle className="w-4 h-4 text-emerald-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-slate-900 leading-snug">Need Help?</h3>
-                                        <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">Talk to our travel experts for easy bookings.</p>
+                                        <h3 className="text-sm font-bold text-slate-900 leading-snug">Spotted a mistake?</h3>
+                                        <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">Timetables change. Let us know if this schedule looks wrong.</p>
                                     </div>
                                 </div>
-                                <a href="#" className="text-orange-500 hover:text-orange-600 text-sm font-bold transition-colors">Contact Support</a>
+                                <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600 text-sm font-bold transition-colors">Report an Issue</a>
                             </div>
 
                             {src && dest && (() => {
