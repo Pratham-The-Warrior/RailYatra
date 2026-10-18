@@ -1,7 +1,7 @@
 {
     "MUMBAI": {
         "display": "Mumbai",
-        "stations": ["CSMT", "BCT", "LTT", "DR", "BDTS", "ADH", "KYN", "TNA", "PNVL"]
+        "stations": ["CSMT", "MMCT", "LTT", "DR", "BDTS", "ADH", "KYN", "TNA", "PNVL"]
     },
     "DELHI": {
         "display": "Delhi",
@@ -9,11 +9,11 @@
     },
     "CHENNAI": {
         "display": "Chennai",
-        "stations": ["MAS", "MS", "TBM", "PLMG", "ABU", "AVD"]
+        "stations": ["MAS", "MS", "TBM", "ABU", "AVD"]
     },
     "KOLKATA": {
         "display": "Kolkata",
-        "stations": ["HWH", "KOAA", "SDAH", "SHM", "BPQ", "DH"]
+        "stations": ["HWH", "KOAA", "SDAH", "SHM"]
     },
     "BENGALURU": {
         "display": "Bengaluru",
@@ -21,19 +21,19 @@
     },
     "HYDERABAD": {
         "display": "Hyderabad",
-        "stations": ["SC", "HYB", "KCG", "FM", "NM", "LPI"]
+        "stations": ["SC", "HYB", "KCG", "FM", "LPI"]
     },
     "PUNE": {
         "display": "Pune",
-        "stations": ["PUNE", "SUR", "CCH", "AKRD", "LNL"]
+        "stations": ["PUNE", "CCH", "AKRD", "LNL"]
     },
     "AHMEDABAD": {
         "display": "Ahmedabad",
-        "stations": ["ADI", "SBIS"]
+        "stations": ["ADI", "SBIB", "SBT"]
     },
     "JAIPUR": {
         "display": "Jaipur",
-        "stations": ["JP", "DPA", "GADW"]
+        "stations": ["JP", "DPA", "GADJ"]
     },
     "LUCKNOW": {
         "display": "Lucknow",
@@ -57,7 +57,7 @@
     },
     "COIMBATORE": {
         "display": "Coimbatore",
-        "stations": ["CBE", "PLNI"]
+        "stations": ["CBE", "PTJ"]
     },
     "GOA": {
         "display": "Goa",
@@ -65,7 +65,7 @@
     },
     "THIRUVANANTHAPURAM": {
         "display": "Thiruvananthapuram",
-        "stations": ["TVC", "TVCY"]
+        "stations": ["TVC", "TVCN"]
     },
     "KOCHI": {
         "display": "Kochi",
@@ -73,7 +73,7 @@
     },
     "KANPUR": {
         "display": "Kanpur",
-        "stations": ["CNB", "CPNR"]
+        "stations": ["CNB", "CPA"]
     },
     "AGRA": {
         "display": "Agra",
@@ -165,6 +165,6 @@
     },
     "TRIVANDRUM": {
         "display": "Trivandrum",
-        "stations": ["TVC", "TVCY"]
+        "stations": ["TVC", "TVCN"]
     }
 }
