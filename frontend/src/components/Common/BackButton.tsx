@@ -29,14 +29,14 @@ export const BackButton: React.FC<BackButtonProps> = ({
     }, [sticky]);
 
     const stickyClasses = sticky 
-        ? `sticky z-30 transition-all duration-300 ${isScrolled ? `bg-[#f5f6f8]/95 backdrop-blur-md shadow-sm border-b border-slate-200/50 py-2.5 px-1 -mx-1` : 'bg-transparent border-b border-transparent py-2.5 md:py-0'}`
+        ? `sticky z-30 transition-all duration-300 ${isScrolled ? `bg-[#f5f6f8]/95 backdrop-blur-md shadow-xs border-b border-slate-200/50 py-2.5 px-1 -mx-1` : 'bg-transparent border-b border-transparent py-2.5 md:py-0'}`
         : '';
 
     return (
         <div className={`${stickyClasses} ${className}`} style={sticky ? { top: `${offset}px` } : {}}>
             <button
                 onClick={onClick}
-                className="group flex items-center gap-1 py-1.5 pr-3.5 pl-1.5 rounded-full bg-white border border-slate-200 shadow-sm hover:border-orange-200 hover:bg-orange-50/50 transition-all active:scale-[0.96]"
+                className="group flex items-center gap-1 py-1.5 pr-3.5 pl-1.5 rounded-full bg-white border border-slate-200 shadow-xs hover:border-orange-200 hover:bg-orange-50/50 transition-all active:scale-[0.96]"
             >
                 <div className="w-7 h-7 rounded-full bg-slate-50 group-hover:bg-orange-100 flex items-center justify-center transition-colors">
                     <ChevronLeft className="w-4 h-4 text-slate-500 group-hover:text-orange-600" />

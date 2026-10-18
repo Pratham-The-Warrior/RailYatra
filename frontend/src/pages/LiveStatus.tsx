@@ -192,7 +192,7 @@ export const LiveStatus: React.FC<LiveStatusProps> = ({ onNavigate, initialTrain
                 >
                     <div className="flex justify-center mb-7">
                         <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-red-50 flex items-center justify-center relative">
-                            <div className="w-16 h-16 rounded-xl bg-white shadow-sm border border-red-100 flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-xl bg-white shadow-xs border border-red-100 flex items-center justify-center">
                                 <AlertTriangle className="w-8 h-8 text-red-400" />
                             </div>
                             <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow-md shadow-orange-500/30">
@@ -301,14 +301,14 @@ export const LiveStatus: React.FC<LiveStatusProps> = ({ onNavigate, initialTrain
                         Enter a train number above to get real-time location, platform info, and delay updates.
                     </p>
                     <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                        <div className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-xs">
                             <Clock className="w-5 h-5 text-emerald-500" />
                             <div className="text-left">
                                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">REAL-TIME DATA</p>
                                 <p className="text-sm font-bold text-slate-700">Official NTES Updates</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                        <div className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-xs">
                             <Train className="w-5 h-5 text-orange-500" />
                             <div className="text-left">
                                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">LIVE TIMELINE</p>

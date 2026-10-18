@@ -118,7 +118,7 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
         return (
             <>
                 {parts.map((part, i) => 
-                    regex.test(part) ? <span key={i} className="text-orange-600 bg-orange-100/50 rounded px-0.5 font-extrabold">{part}</span> : part
+                    regex.test(part) ? <span key={i} className="text-orange-600 bg-orange-100/50 rounded-sm px-0.5 font-extrabold">{part}</span> : part
                 )}
             </>
         );
@@ -145,7 +145,7 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
                     }}
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
-                    className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-10 py-3.5 text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-300 transition-all placeholder:text-slate-400 placeholder:font-normal"
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-10 py-3.5 text-sm font-semibold text-slate-900 outline-hidden focus:ring-2 focus:ring-orange-100 focus:border-orange-300 transition-all placeholder:text-slate-400 placeholder:font-normal"
                     placeholder={placeholder}
                 />
                 
@@ -157,7 +157,7 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
                             onChange('', '');
                             setIsOpen(false);
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1.5 focus:outline-none"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1.5 focus:outline-hidden"
                     >
                         <X size={16} />
                     </button>
@@ -172,7 +172,7 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden ring-1 ring-slate-900/5"
                     >
-                        <div className="p-2 max-h-64 overflow-y-auto space-y-1">
+                        <div className="p-2 max-h-64 overflow-y-auto stack-y-1">
                             {isLoading ? (
                                 <div className="p-8 flex flex-col items-center justify-center text-slate-400">
                                     <Loader2 size={24} className="animate-spin mb-3 text-orange-400" />
@@ -190,8 +190,8 @@ export const StationSearchInput: React.FC<StationSearchInputProps> = ({ value, o
                                                 onClick={() => handleSelect(s)}
                                                 className={`w-full px-4 py-3.5 rounded-xl flex items-center justify-between text-left transition-all group ${
                                                     selectedIndex === index
-                                                        ? 'bg-gradient-to-r from-orange-50 to-amber-50 ring-1 ring-orange-200'
-                                                        : 'hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50'
+                                                        ? 'bg-linear-to-r from-orange-50 to-amber-50 ring-1 ring-orange-200'
+                                                        : 'hover:bg-linear-to-r hover:from-orange-50 hover:to-amber-50'
                                                 }`}
                                                 type="button"
                                                 onMouseEnter={() => setSelectedIndex(index)}

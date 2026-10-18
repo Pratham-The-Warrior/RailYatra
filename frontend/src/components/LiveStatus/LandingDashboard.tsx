@@ -22,7 +22,7 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
 
     /* ── Recent Searches Card (rendered in two positions with visibility toggle) ── */
     const recentSearchesCard = (
-        <div className="bg-[#1e293b] rounded-2xl sm:rounded-[32px] p-5 sm:p-7 shadow-xl shadow-slate-900/10 border border-[#334155]">
+        <div className="bg-slate-custom rounded-2xl sm:rounded-[32px] p-5 sm:p-7 shadow-xl shadow-slate-900/10 border border-[#334155]">
             <div className="flex items-center justify-between mb-5 sm:mb-8">
                 <h3 className="text-[16px] sm:text-[18px] font-bold text-white tracking-tight flex items-center gap-2">
                     <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
@@ -33,12 +33,12 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
             {recentSearches.length === 0 ? (
                 <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-5 sm:p-6 text-center mb-5 sm:mb-8">
                     <Train className="w-7 h-7 sm:w-8 sm:h-8 text-slate-500 mx-auto mb-2 sm:mb-3" />
-                    <p className="text-[13px] sm:text-sm text-slate-400 font-medium leading-relaxed">
+                    <p className="text-[13px] sm:text-sm text-slate-400 font-medium leading-relaxed sm:leading-5">
                         No recent searches found.<br />Search for a train to track!
                     </p>
                 </div>
             ) : (
-                <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-8">
+                <div className="stack-y-2 sm:stack-y-3 mb-5 sm:mb-8">
                     {recentSearches.map((r, i) => (
                         <button key={`${r.trainNumber}-${i}`} onClick={() => onTrack(r.trainNumber)} className="w-full flex items-center justify-between bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 rounded-xl sm:rounded-2xl p-3 px-3 sm:px-4 transition-colors group">
                             <div className="flex items-center gap-3 sm:gap-4">
@@ -85,7 +85,7 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                     {/* Card 1 */}
                     <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgb(249,115,22,0.08)] hover:border-orange-200 transition-all cursor-pointer group" onClick={() => onTrack('22436')}>
                         <div className="flex items-center justify-between mb-4 sm:mb-6">
-                            <div className="bg-[#1e293b] text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg tracking-widest shadow-sm">
+                            <div className="bg-slate-custom text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg tracking-widest shadow-xs">
                                 22436
                             </div>
                             <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-[10px] uppercase tracking-widest">
@@ -113,7 +113,7 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                     {/* Card 2 */}
                     <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgb(249,115,22,0.08)] hover:border-orange-200 transition-all cursor-pointer group" onClick={() => onTrack('12951')}>
                         <div className="flex items-center justify-between mb-4 sm:mb-6">
-                            <div className="bg-[#1e293b] text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg tracking-widest shadow-sm">
+                            <div className="bg-slate-custom text-white text-[10px] font-extrabold px-3 py-1.5 rounded-lg tracking-widest shadow-xs">
                                 12951
                             </div>
                             <div className="flex items-center gap-1.5 text-emerald-500 font-bold text-[10px] uppercase tracking-widest">
@@ -145,7 +145,7 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                 </div>
 
                 {/* Journey Insights Complete Block */}
-                <div className="bg-[#f8fafc] rounded-2xl sm:rounded-[32px] p-5 sm:p-8 relative overflow-hidden mt-2 sm:mt-4 shadow-sm border border-slate-100">
+                <div className="bg-[#f8fafc] rounded-2xl sm:rounded-[32px] p-5 sm:p-8 relative overflow-hidden mt-2 sm:mt-4 shadow-xs border border-slate-100">
                     <div className="absolute -right-16 -bottom-16 pointer-events-none opacity-[0.03] text-9xl leading-none">
                         <Activity className="w-72 h-72" />
                     </div>
@@ -161,7 +161,7 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                             </div>
                             <div>
                                 <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Peak Demand</h4>
-                                <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed font-medium">
+                                <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed sm:leading-4 font-medium">
                                     High traffic observed on Delhi-Mumbai route for next 48 hours.
                                 </p>
                             </div>
@@ -176,7 +176,7 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                             </div>
                             <div>
                                 <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Reliability Score</h4>
-                                <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed font-medium">
+                                <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed sm:leading-4 font-medium">
                                     Shatabdi Express trains maintain a 99% punctuality rate this week.
                                 </p>
                             </div>
@@ -191,7 +191,7 @@ export const LandingDashboard: React.FC<LandingDashboardProps> = ({
                             </div>
                             <div>
                                 <h4 className="text-[13px] font-bold text-slate-900 mb-1 sm:mb-2">Weather Alert</h4>
-                                <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed font-medium">
+                                <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed sm:leading-4 font-medium">
                                     Mild fog reported near North stations. No major delays expected.
                                 </p>
                             </div>

@@ -57,20 +57,20 @@ export const TrackingResults: React.FC<TrackingResultsProps> = ({
                     <BackButton onClick={onBack} label="Back to Search" sticky offset={64} className="mb-5 sm:mb-8" />
 
                     {/* ═══ HERO CARD ═══ */}
-                    <div className="bg-white rounded-2xl md:rounded-[40px] p-4 sm:p-6 md:p-10 lg:px-14 mb-5 sm:mb-8 md:mb-10 shadow-sm border border-slate-100">
+                    <div className="bg-white rounded-2xl md:rounded-[40px] p-4 sm:p-6 md:p-10 lg:px-14 mb-5 sm:mb-8 md:mb-10 shadow-xs border border-slate-100">
                         {/* Desktop hero layout */}
                         <div className="hidden md:flex flex-row justify-between items-center gap-12">
                             <div className="flex-1 min-w-0">
                                 <p className="font-sans text-[11px] sm:text-[12px] font-black text-orange-600 uppercase tracking-[0.2em] mb-2">
                                     TRAIN #{meta.train_no}
                                 </p>
-                                <h1 className="font-sans text-3xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-4 capitalize">
+                                <h1 className="font-sans text-3xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-tight sm:leading-9 lg:leading-10 mb-4 capitalize">
                                     {isMoving && itinerary[activeIdx + 1]
                                         ? `Running between ${itinerary[activeIdx].station.toLowerCase()} and ${itinerary[activeIdx + 1].station.toLowerCase()}`
                                         : meta.current_location.replace(/\s+at\s+\d{1,2}:\d{2}.*$/i, '').toLowerCase()}
                                 </h1>
                                 <div className="flex items-center gap-3 flex-wrap">
-                                    <div className={`px-3 py-1.5 rounded flex items-center gap-2 ${heroStop?.is_delayed ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    <div className={`px-3 py-1.5 rounded-sm flex items-center gap-2 ${heroStop?.is_delayed ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
                                         <div className={`w-1.5 h-1.5 rounded-full ${heroStop?.is_delayed ? 'bg-red-500' : 'bg-emerald-500 animate-pulse'}`} />
                                         <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">
                                             {heroStop?.is_delayed ? heroStop.status.toUpperCase().replace('MIN', 'M LATE') : 'ON TIME'}
@@ -123,14 +123,14 @@ export const TrackingResults: React.FC<TrackingResultsProps> = ({
                                 </div>
                             </div>
 
-                            <h1 className="font-sans text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight mb-3 capitalize">
+                            <h1 className="font-sans text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight sm:leading-8 mb-3 capitalize">
                                 {isMoving && itinerary[activeIdx + 1]
                                     ? `Running between ${itinerary[activeIdx].station.toLowerCase()} and ${itinerary[activeIdx + 1].station.toLowerCase()}`
                                     : meta.current_location.replace(/\s+at\s+\d{1,2}:\d{2}.*$/i, '').toLowerCase()}
                             </h1>
 
                             <div className="flex items-center gap-3 mb-4 flex-wrap">
-                                <div className={`px-2.5 py-1 rounded flex items-center gap-1.5 ${heroStop?.is_delayed ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                <div className={`px-2.5 py-1 rounded-sm flex items-center gap-1.5 ${heroStop?.is_delayed ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
                                     <div className={`w-1 h-1 rounded-full ${heroStop?.is_delayed ? 'bg-red-500' : 'bg-emerald-500 animate-pulse'}`} />
                                     <span className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap">
                                         {heroStop?.is_delayed ? heroStop.status.toUpperCase().replace('MIN', 'M LATE') : 'ON TIME'}

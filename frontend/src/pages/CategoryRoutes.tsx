@@ -103,7 +103,7 @@ export const CategoryRoutes: React.FC<CategoryRoutesProps> = ({
                             placeholder="Search by number, name or station..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                         />
                     </div>
                 </div>
@@ -118,7 +118,7 @@ export const CategoryRoutes: React.FC<CategoryRoutesProps> = ({
                         placeholder="Search routes..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm"
+                        className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs"
                     />
                 </div>
 
@@ -139,7 +139,7 @@ export const CategoryRoutes: React.FC<CategoryRoutesProps> = ({
                         </button>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="bg-white rounded-3xl shadow-xs border border-slate-200 overflow-hidden">
                         {/* Desktop View */}
                         <div className="hidden lg:block">
                             <table className="w-full text-left border-collapse">
@@ -242,7 +242,7 @@ export const CategoryRoutes: React.FC<CategoryRoutesProps> = ({
                                 >
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-50 text-orange-600 border border-orange-100 mb-1 inline-block">
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-sm bg-orange-50 text-orange-600 border border-orange-100 mb-1 inline-block">
                                                 {train.train_number}
                                             </span>
                                             <h3 className="font-bold text-slate-900">{train.train_name}</h3>
@@ -251,7 +251,7 @@ export const CategoryRoutes: React.FC<CategoryRoutesProps> = ({
                                             {days.map((day, dIdx) => (
                                                 <span
                                                     key={day}
-                                                    className={`w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold ${train.operating_days[day]
+                                                    className={`w-4 h-4 rounded-xs flex items-center justify-center text-[8px] font-bold ${train.operating_days[day]
                                                         ? 'bg-orange-500 text-white'
                                                         : 'bg-slate-100 text-slate-300'
                                                         }`}
@@ -287,7 +287,7 @@ export const CategoryRoutes: React.FC<CategoryRoutesProps> = ({
                                     <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
                                         <div className="flex gap-1">
                                             {train.classes_available.map(c => (
-                                                <span key={c} className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">
+                                                <span key={c} className="text-[9px] font-bold px-2 py-0.5 rounded-sm bg-slate-100 text-slate-600 uppercase">
                                                     {c}
                                                 </span>
                                             ))}

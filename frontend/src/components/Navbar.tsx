@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                     <img
                         src="/logo2.png"
                         alt="RailYatra Logo"
-                        className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-xl shadow-sm border border-slate-100 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]"
+                        className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-xl shadow-xs border border-slate-100 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]"
                     />
                     <span className="text-xl md:text-2xl font-semibold tracking-tight text-slate-900 font-display group-hover:text-orange-500 transition-colors">RailYatra</span>
                 </div>
@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                             {item}
                         </a>
                     ))}
-                    <button className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-6 py-2 rounded-lg shadow-sm transition-colors">
+                    <button className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-6 py-2 rounded-lg shadow-xs transition-colors">
                         Login
                     </button>
                 </div>
@@ -82,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                         transition={{ duration: 0.2, ease: 'easeInOut' }}
                         className="md:hidden bg-white border-t border-slate-100 shadow-lg overflow-hidden"
                     >
-                        <div className="px-4 py-3 space-y-1">
+                        <div className="px-4 py-3 stack-y-1">
                             {navItems.map(item => (
                                 <button
                                     key={item.label}
@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                                 </a>
                             ))}
                             <div className="pt-2 pb-1 px-3">
-                                <button className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow-sm transition-colors">
+                                <button className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow-xs transition-colors">
                                     Login
                                 </button>
                             </div>

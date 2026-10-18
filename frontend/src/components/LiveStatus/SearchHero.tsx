@@ -19,7 +19,7 @@ export const SearchHero: React.FC<SearchHeroProps> = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="text-[28px] sm:text-4xl md:text-[56px] font-extrabold text-[#111827] font-display leading-[1.1] mb-5 sm:mb-8 tracking-tight"
+                className="text-[28px] sm:text-4xl md:text-[56px] font-extrabold text-[#111827] font-display leading-[1.1] sm:leading-10 mb-5 sm:mb-8 tracking-tight"
             >
                 Where is your <span className="text-orange-500">Train?</span>
             </motion.h1>
@@ -42,7 +42,7 @@ export const SearchHero: React.FC<SearchHeroProps> = ({
                         value={trainNumber}
                         onChange={e => setTrainNumber(e.target.value)}
                         placeholder="Enter Train Number or Name (e.g. 12001 or Bhopal Shatabdi)"
-                        className="w-full bg-transparent border-none text-slate-800 text-base font-medium placeholder:text-slate-300 focus:outline-none focus:ring-0 px-2 py-3"
+                        className="w-full bg-transparent border-none text-slate-800 text-base font-medium placeholder:text-slate-300 focus:outline-hidden focus:ring-0 px-2 py-3"
                     />
                     <button
                         type="submit"
@@ -61,7 +61,7 @@ export const SearchHero: React.FC<SearchHeroProps> = ({
                             value={trainNumber}
                             onChange={e => setTrainNumber(e.target.value)}
                             placeholder="Train Number (e.g. 12001)"
-                            className="w-full bg-transparent border-none text-slate-800 text-[15px] font-medium placeholder:text-slate-300 focus:outline-none focus:ring-0"
+                            className="w-full bg-transparent border-none text-slate-800 text-[15px] font-medium placeholder:text-slate-300 focus:outline-hidden focus:ring-0"
                         />
                     </div>
                     <button

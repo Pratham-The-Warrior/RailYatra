@@ -34,8 +34,8 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
             {/* ═══ HERO ═══ */}
             <div className="relative overflow-hidden pt-16 md:pt-24">
                 {/* Subtle gradient bg */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white via-white to-transparent" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-orange-50/80 to-transparent rounded-full blur-3xl opacity-60" />
+                <div className="absolute inset-0 bg-linear-to-b from-white via-white to-transparent" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-linear-to-b from-orange-50/80 to-transparent rounded-full blur-3xl opacity-60" />
 
                 {/* Back Button — aligned with navbar logo */}
                 {onNavigate && (
@@ -54,7 +54,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
-                        className="text-[22px] sm:text-3xl md:text-[48px] font-extrabold text-slate-900 font-display leading-[1.2] mb-2 md:mb-5 tracking-tight text-center"
+                        className="text-[22px] sm:text-3xl md:text-[48px] font-extrabold text-slate-900 font-display leading-[1.2] sm:leading-9 mb-2 md:mb-5 tracking-tight text-center"
                     >
                         Track Your Journey with{' '}
                         <span className="text-orange-500">RailYatra</span>
@@ -65,7 +65,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
-                        className="text-slate-500 text-[13px] md:text-lg max-w-lg mx-auto leading-relaxed mb-5 md:mb-10 px-1 md:px-0 text-center"
+                        className="text-slate-500 text-[13px] md:text-lg max-w-lg mx-auto leading-relaxed md:leading-7 mb-5 md:mb-10 px-1 md:px-0 text-center"
                     >
                         Access real-time schedules, platform info, and coach positions for all Indian passenger trains.
                     </motion.p>
@@ -85,7 +85,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                 value={trainNumber}
                                 onChange={e => setTrainNumber(e.target.value)}
                                 placeholder="Enter Train Number (e.g. 12001)"
-                                className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 md:py-5 pl-11 md:pl-14 pr-[108px] md:pr-36 text-sm md:text-base font-medium text-slate-900 shadow-lg shadow-slate-200/40 focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all placeholder:text-slate-400"
+                                className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 md:py-5 pl-11 md:pl-14 pr-[108px] md:pr-36 text-sm md:text-base font-medium text-slate-900 shadow-lg shadow-slate-200/40 focus:outline-hidden focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all placeholder:text-slate-400"
                             />
                             <button
                                 type="submit"
@@ -107,7 +107,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                         {recents.length > 0 && (
                             <button
                                 onClick={() => { setTrainNumber(recents[0].trainNumber); fetchSchedule(recents[0].trainNumber); }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-500 hover:border-orange-300 hover:text-orange-500 transition-all shadow-sm"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-500 hover:border-orange-300 hover:text-orange-500 transition-all shadow-xs"
                             >
                                 <Clock className="w-3 h-3 shrink-0" />
                                 <span className="truncate max-w-[140px]">{recents[0].trainNumber} {titleCase(recents[0].trainName)}</span>
@@ -115,14 +115,14 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                         )}
                         <button
                             onClick={() => { setTrainNumber('22436'); fetchSchedule('22436'); }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-full text-xs font-medium text-orange-600 hover:bg-orange-100 transition-all shadow-sm"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-full text-xs font-medium text-orange-600 hover:bg-orange-100 transition-all shadow-xs"
                         >
                             <Sparkles className="w-3 h-3 shrink-0" />
                             Vande Bharat
                         </button>
                         <button
                             onClick={() => { setTrainNumber('12301'); fetchSchedule('12301'); }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-full text-xs font-medium text-orange-600 hover:bg-orange-100 transition-all shadow-sm"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-200 rounded-full text-xs font-medium text-orange-600 hover:bg-orange-100 transition-all shadow-xs"
                         >
                             <Sparkles className="w-3 h-3 shrink-0" />
                             Rajdhani
@@ -136,7 +136,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 md:gap-7">
 
                     {/* LEFT COLUMN */}
-                    <div className="space-y-5 md:space-y-8">
+                    <div className="stack-y-5 md:stack-y-8">
                         {/* ── Popular Trains ── */}
                         <motion.div
                             initial={{ opacity: 0, y: 16 }}
@@ -166,7 +166,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                                 {t.icon}
                                             </div>
                                             <div className="min-w-0 w-full">
-                                                <span className={`text-[10px] font-bold uppercase tracking-[0.08em] ${t.tagColor} px-2 py-0.5 rounded inline-block`}>
+                                                <span className={`text-[10px] font-bold uppercase tracking-[0.08em] ${t.tagColor} px-2 py-0.5 rounded-sm inline-block`}>
                                                     {t.tag}
                                                 </span>
                                                 <p className="text-[13px] font-semibold text-slate-800 mt-1 truncate">{t.name}</p>
@@ -189,7 +189,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                             {t.icon}
                                         </div>
                                         <div className="min-w-0">
-                                            <span className={`text-[11px] font-bold uppercase tracking-[0.08em] ${t.tagColor} px-2 py-0.5 rounded`}>
+                                            <span className={`text-[11px] font-bold uppercase tracking-[0.08em] ${t.tagColor} px-2 py-0.5 rounded-sm`}>
                                                 {t.tag}
                                             </span>
                                             <p className="text-sm font-semibold text-slate-800 mt-1 truncate">{t.name}</p>
@@ -214,12 +214,12 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                     <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-orange-100/80 flex items-center justify-center mx-auto mb-3">
                                         <Search className="w-5 h-5 text-orange-400" />
                                     </div>
-                                    <p className="text-[13px] md:text-sm text-slate-500 italic leading-relaxed">
+                                    <p className="text-[13px] md:text-sm text-slate-500 italic leading-relaxed md:leading-5">
                                         No recent searches yet.<br className="md:hidden" /> Start by searching for a train number.
                                     </p>
                                 </div>
                             ) : (
-                                <div className="space-y-1.5 md:space-y-2">
+                                <div className="stack-y-1.5 md:stack-y-2">
                                     {recents.map(r => (
                                         <button
                                             key={r.trainNumber}
@@ -247,7 +247,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.5 }}
-                        className="space-y-4 md:space-y-6"
+                        className="stack-y-4 md:stack-y-6"
                     >
                         {/* ── Pro Tips (collapsed on mobile as a compact card) ── */}
                         <div className="bg-white rounded-2xl border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 md:p-6">
@@ -255,7 +255,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                 <Lightbulb className="w-4 h-4 text-emerald-500" />
                                 Pro Tips
                             </h3>
-                            <div className="space-y-3 md:space-y-4">
+                            <div className="stack-y-3 md:stack-y-4">
                                 {[
                                     {
                                         num: '1',
@@ -286,12 +286,12 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                         </div>
 
                         {/* ── Planning a Trip ── */}
-                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-5 md:p-6 text-white shadow-lg shadow-orange-500/20">
+                        <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-2xl p-5 md:p-6 text-white shadow-lg shadow-orange-500/20">
                             <h3 className="text-base md:text-lg font-bold mb-1.5 md:mb-2">Planning a Trip?</h3>
-                            <p className="text-orange-100 text-xs md:text-sm leading-relaxed mb-4 md:mb-5">
+                            <p className="text-orange-100 text-xs md:text-sm leading-relaxed md:leading-5 mb-4 md:mb-5">
                                 Check PNR status and booking availability in one click.
                             </p>
-                            <button className="w-full bg-white text-orange-600 font-bold text-sm md:text-[15px] py-3 md:py-3.5 rounded-xl hover:bg-orange-50 transition-colors active:scale-[0.97] shadow-sm">
+                            <button className="w-full bg-white text-orange-600 font-bold text-sm md:text-[15px] py-3 md:py-3.5 rounded-xl hover:bg-orange-50 transition-colors active:scale-[0.97] shadow-xs">
                                 Check PNR Now
                             </button>
                         </div>

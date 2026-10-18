@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
             <div className="max-w-7xl mx-auto px-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-16">
                     {/* Brand Column */}
-                    <div className="col-span-2 md:col-span-1 space-y-5">
+                    <div className="col-span-2 md:col-span-1 stack-y-5">
                         <div className="flex items-center gap-2.5">
                             <img
                                 src="/logo2.png"
@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
                     {/* Quick Links */}
                     <div>
                         <h4 className="font-bold text-orange-400 text-xs uppercase tracking-widest mb-5">Quick Links</h4>
-                        <ul className="space-y-3 text-sm text-slate-400 font-medium">
+                        <ul className="stack-y-3 text-sm text-slate-400 font-medium">
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Home</a></li>
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Train Schedule</a></li>
                         </ul>
@@ -43,7 +43,7 @@ export const Footer: React.FC = () => {
                     {/* Support */}
                     <div>
                         <h4 className="font-bold text-orange-400 text-xs uppercase tracking-widest mb-5">Support</h4>
-                        <ul className="space-y-3 text-sm text-slate-400 font-medium">
+                        <ul className="stack-y-3 text-sm text-slate-400 font-medium">
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Help Center</a></li>
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Refund Rules</a></li>
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Terms of Service</a></li>
@@ -54,7 +54,7 @@ export const Footer: React.FC = () => {
                     {/* Connect */}
                     <div>
                         <h4 className="font-bold text-orange-400 text-xs uppercase tracking-widest mb-5">Connect</h4>
-                        <ul className="space-y-3 text-sm text-slate-400 font-medium">
+                        <ul className="stack-y-3 text-sm text-slate-400 font-medium">
                             <li><a href="#" className="hover:text-orange-400 transition-colors">GitHub</a></li>
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Twitter / X</a></li>
                             <li><a href="#" className="hover:text-orange-400 transition-colors">Contact Us</a></li>
@@ -75,7 +75,7 @@ export const Footer: React.FC = () => {
                     >
                         {/* Animated gradient border */}
                         <span
-                            className="absolute -inset-[1px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[1px]"
+                            className="absolute -inset-px rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[1px]"
                             style={{
                                 background: 'conic-gradient(from var(--border-angle, 0deg), #f97316, #fb923c, #0A66C2, #38bdf8, #f97316)',
                                 animation: 'border-spin 3s linear infinite',

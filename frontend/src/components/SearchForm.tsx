@@ -60,7 +60,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
 
             <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-end gap-6 relative">
                 {/* From Field */}
-                <div className="flex-1 w-full space-y-2">
+                <div className="flex-1 w-full stack-y-2">
                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-display">
                         FROM
                     </label>
@@ -85,7 +85,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
                 </div>
 
                 {/* To Field */}
-                <div className="flex-1 w-full space-y-2">
+                <div className="flex-1 w-full stack-y-2">
                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-display">
                         TO
                     </label>
@@ -99,7 +99,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
                 </div>
 
                 {/* Date Field */}
-                <div className="flex-1 w-full space-y-2">
+                <div className="flex-1 w-full stack-y-2">
                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-display">
                         DATE
                     </label>
@@ -109,7 +109,7 @@ export const SearchForm: React.FC<SearchFormProps> = ({ onSearch, isLoading }) =
                             value={params.date}
                             onChange={handleDateChange}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full h-12 md:h-14 px-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-slate-800 font-semibold"
+                            className="w-full h-12 md:h-14 px-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-slate-800 font-semibold"
                         />
                     </div>
                 </div>

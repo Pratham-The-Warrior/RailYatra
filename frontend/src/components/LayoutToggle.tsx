@@ -14,7 +14,7 @@ export const LayoutToggle: React.FC<LayoutToggleProps> = ({ layout, onToggle }) 
         <div className="relative flex items-center bg-slate-100 rounded-xl p-1 gap-0.5">
             {/* Sliding active indicator */}
             <motion.div
-                className="absolute top-1 bottom-1 rounded-lg bg-white shadow-sm border border-slate-200"
+                className="absolute top-1 bottom-1 rounded-lg bg-white shadow-xs border border-slate-200"
                 initial={false}
                 animate={{
                     left: layout === 'list' ? '4px' : '50%',

@@ -19,7 +19,7 @@ export const SchedulesError: React.FC<SchedulesErrorProps> = ({ error, setError 
                 {/* Icon circle */}
                 <div className="flex justify-center mb-7">
                     <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-slate-100 flex items-center justify-center relative">
-                        <div className="w-16 h-16 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-xl bg-white shadow-xs border border-slate-200 flex items-center justify-center">
                             <Train className="w-8 h-8 text-slate-400" />
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center shadow-md shadow-orange-500/30">
