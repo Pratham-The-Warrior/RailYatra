@@ -41,7 +41,7 @@ export const SearchHero: React.FC<SearchHeroProps> = ({
                         type="text"
                         value={trainNumber}
                         onChange={e => setTrainNumber(e.target.value)}
-                        placeholder="Enter Train Number or Name (e.g. 12002 or Bhopal Shatabdi)"
+                        placeholder="Enter Train Number or Name (e.g. 12001 or Bhopal Shatabdi)"
                         className="w-full bg-transparent border-none text-slate-800 text-base font-medium placeholder:text-slate-300 focus:outline-none focus:ring-0 px-2 py-3"
                     />
                     <button
@@ -60,7 +60,7 @@ export const SearchHero: React.FC<SearchHeroProps> = ({
                             type="text"
                             value={trainNumber}
                             onChange={e => setTrainNumber(e.target.value)}
-                            placeholder="Train Number (e.g. 12002)"
+                            placeholder="Train Number (e.g. 12001)"
                             className="w-full bg-transparent border-none text-slate-800 text-[15px] font-medium placeholder:text-slate-300 focus:outline-none focus:ring-0"
                         />
                     </div>
@@ -84,7 +84,7 @@ export const SearchHero: React.FC<SearchHeroProps> = ({
                 {[
                     { no: '22436', name: 'Vande Bharat' },
                     { no: '12951', name: 'Rajdhani Exp' },
-                    { no: '12002', name: 'Shatabdi' },
+                    { no: '12001', name: 'Shatabdi' },
                 ].map(t => (
                     <button
                         key={t.no}

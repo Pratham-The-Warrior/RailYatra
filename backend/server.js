@@ -13,7 +13,10 @@ container.start();
 const app = createApp(container);
 
 const server = app.listen(config.port, () => {
-    log.info('server listening', { port: config.port, enginePool: config.enginePoolSize });
+    log.info('server listening', {
+        port: config.port, enginePool: config.enginePoolSize,
+        memoryLimitMb: config.system.memoryMb, routeCacheMaxMb: config.routeCacheMaxMb, smallCacheMaxMb: config.smallCacheMaxMb
+    });
 });
 
 // Keep-alive must outlive the load balancer's idle timeout to avoid 502s.

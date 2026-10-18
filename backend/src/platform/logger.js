@@ -4,8 +4,9 @@
  * anything else emits human-readable lines for local development.
  */
 const json = process.env.LOG_FORMAT === 'json';
-// Which replica wrote the line (Railway sets RAILWAY_REPLICA_ID; k8s sets HOSTNAME).
-const instance = process.env.RAILWAY_REPLICA_ID || process.env.INSTANCE_ID || process.env.HOSTNAME || undefined;
+// Which replica wrote the line. The container sets this to config.instanceId so
+// logs match the X-Instance-Id header and /api/health.
+let instance = process.env.RAILWAY_REPLICA_ID || process.env.INSTANCE_ID || undefined;
 
 function write(level, msg, fields) {
     if (json) {
@@ -18,6 +19,7 @@ function write(level, msg, fields) {
 }
 
 module.exports = {
+    setInstance: (id) => { instance = id; },
     info: (msg, fields) => write('info', msg, fields),
     warn: (msg, fields) => write('warn', msg, fields),
     error: (msg, fields) => write('error', msg, fields)

@@ -115,6 +115,22 @@ test('configuration fails fast on invalid values', () => {
     assert.match(loadConfig({}).instanceId, /^[0-9a-f]{8}$/);
 });
 
+test('defaults are sized to the memory limit and cores', () => {
+    const at = (memoryMb, cpus = 32) => loadConfig({}, { cpus, memoryMb });
+    // Railway-sized containers on big hosts: never more engines than memory allows.
+    assert.deepStrictEqual(
+        [at(256).enginePoolSize, at(512).enginePoolSize, at(1024).enginePoolSize, at(8192).enginePoolSize],
+        [1, 3, 4, 4]);
+    assert.strictEqual(at(8192, 2).enginePoolSize, 2);
+    assert.strictEqual(at(8192, 1).enginePoolSize, 1);
+    assert.deepStrictEqual([at(512).routeCacheMaxMb, at(512).smallCacheMaxMb], [128, 15]);
+    assert.deepStrictEqual([at(8192).routeCacheMaxMb, at(8192).smallCacheMaxMb], [256, 32]);
+    assert.deepStrictEqual([at(64).routeCacheMaxMb, at(64).smallCacheMaxMb], [16, 4]);
+    // Explicit settings always win.
+    assert.strictEqual(loadConfig({ ENGINE_POOL_SIZE: '8', ROUTE_CACHE_MAX_MB: '512' }, { cpus: 1, memoryMb: 256 }).enginePoolSize, 8);
+    assert.strictEqual(loadConfig({ ROUTE_CACHE_MAX_MB: '512' }, { cpus: 1, memoryMb: 256 }).routeCacheMaxMb, 512);
+});
+
 test('every feature module honours the module contract', () => {
     const names = new Set();
     for (const m of modules) {

@@ -57,3 +57,4 @@ loadtest/node_modules
 
 .datapipe-cache/
 data-report.md
+*.tsbuildinfo

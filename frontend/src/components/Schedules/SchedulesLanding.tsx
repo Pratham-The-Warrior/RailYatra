@@ -84,7 +84,7 @@ export const SchedulesLanding: React.FC<SchedulesLandingProps> = ({
                                 type="text"
                                 value={trainNumber}
                                 onChange={e => setTrainNumber(e.target.value)}
-                                placeholder="Enter Train Number (e.g. 12002)"
+                                placeholder="Enter Train Number (e.g. 12001)"
                                 className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 md:py-5 pl-11 md:pl-14 pr-[108px] md:pr-36 text-sm md:text-base font-medium text-slate-900 shadow-lg shadow-slate-200/40 focus:outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all placeholder:text-slate-400"
                             />
                             <button
