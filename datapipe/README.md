@@ -96,7 +96,9 @@ both sides.
 - `master_train_data_vandebharat.json` was missing 3 Vande Bharat trains
   (22477, 22478, 22926); `stations.json` was missing CBSA and listed a station
   (`J`) with no trains.
-- Still open, needs a better source: `city_stations.json` references 8 stations
-  with **no trains** in the data, including **BCT (Mumbai Central)**; Jalna is
-  coded `JALNA` instead of the official `J`; 13009/13010 use `KARAMNASA` as a
-  station code.
+- `city_stations.json` referenced 9 station codes that no train serves (e.g.
+  Mumbai Central as `BCT`; the timetable uses `MMCT`) and a few stations from
+  other cities (Balharshah under Kolkata). Fixed; `python3 -m datapipe check`
+  now fails if a city search lists a station that no train serves.
+- Still open, needs a better source: Jalna is coded `JALNA` instead of the
+  official `J`; 13009/13010 use `KARAMNASA` as a station code.

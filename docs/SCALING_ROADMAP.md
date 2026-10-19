@@ -19,7 +19,7 @@ differentiating product features.
 | **Observability** | `console.log` only; health endpoint only reported "process spawned". | No SLOs, no capacity signals, no alerting. |
 | **Deployment** | Single container, no readiness probe, runs as root, no graceful drain, no horizontal scaling story. | Restarts drop traffic; can't scale out safely. |
 | **Testing** | One Windows-only script (`route_engine.exe`), not wired into `npm test`. | No regression safety net. |
-| **Frontend** | Live Status page calls a removed `/api/livestatus` endpoint. 5,200-line `fareCalculator.ts` is unused. | Broken feature in the nav, dead weight. |
+| **Frontend** | Live Status page calls a removed `/api/livestatus` endpoint (since fixed: timetable-based live status). 5,200-line `fareCalculator.ts` is unused (since removed). | Broken feature in the nav, dead weight. |
 
 ### Key insight for caching
 The engine uses **only the day of week** from the query date (`TimeUtils::getDayFromDate`).
