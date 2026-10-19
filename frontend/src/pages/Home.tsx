@@ -121,18 +121,18 @@ export function Home({ onNavigate }: HomeProps) {
             {/* Hero Section */}
             <section className="relative pt-32 md:pt-40 pb-16 md:pb-24 px-4">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-0 inset-x-0 h-[600px] bg-gradient-to-b from-[#fbfafa] via-[#eef2f3] to-transparent" />
+                    <div className="absolute top-0 inset-x-0 h-[600px] bg-linear-to-b from-[#fbfafa] via-[#eef2f3] to-transparent" />
                     <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[700px] rounded-full bg-orange-50/50 blur-3xl" />
                     <div className="absolute top-[10%] right-[-10%] w-[50%] h-[600px] rounded-full bg-green-50/50 blur-3xl" />
                 </div>
 
                 <div className="relative max-w-7xl mx-auto flex flex-col items-center">
-                    <div className="space-y-6 text-center mb-12 relative z-10 w-full">
+                    <div className="stack-y-6 text-center mb-12 relative z-10 w-full">
                         <motion.h1
                             initial={{ opacity: 0, y: 24 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: [.22, 1, .36, 1] }}
-                            className="text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] font-light text-slate-800 leading-[1.1] tracking-tight"
+                            className="text-5xl sm:text-6xl md:text-7xl lg:text-[5rem] font-light text-slate-800 leading-[1.1] sm:leading-none tracking-tight"
                         >
                             Your Gateway to <span className="text-orange-500 font-normal">Smart Rail</span><br />
                             <span className="font-normal text-slate-900">Travel</span>
@@ -141,7 +141,7 @@ export function Home({ onNavigate }: HomeProps) {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.15 }}
-                            className="text-lg md:text-xl text-slate-500 font-normal max-w-2xl mx-auto leading-relaxed text-balance"
+                            className="text-lg md:text-xl text-slate-500 font-normal max-w-2xl mx-auto leading-relaxed md:leading-7 text-balance"
                         >
                             Fast and Convenient travel for the modern Indian commuter.
                         </motion.p>
@@ -169,7 +169,7 @@ export function Home({ onNavigate }: HomeProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <div
                         onClick={() => onNavigate?.('schedules')}
-                        className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start group"
+                        className="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start group"
                     >
                         <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <Calendar size={20} />
@@ -179,13 +179,13 @@ export function Home({ onNavigate }: HomeProps) {
                     </div>
                     <div
                         onClick={() => onNavigate?.('live-status')}
-                        className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start group"
+                        className="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-start group"
                     >
                         <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                             <Activity size={20} />
                         </div>
                         <h3 className="font-semibold text-slate-800 text-lg mb-1 group-hover:text-emerald-600 transition-colors">Live Train Status</h3>
-                        <p className="text-xs text-slate-400">Track running status in real-time</p>
+                        <p className="text-xs text-slate-400">See where your train should be now</p>
                     </div>
                 </div>
             </motion.section>
@@ -193,7 +193,7 @@ export function Home({ onNavigate }: HomeProps) {
             {/* Recent Searches */}
             {recentSearches.length > 0 && (
                 <section className="max-w-7xl mx-auto px-4 py-8">
-                    <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100">
+                    <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xs border border-slate-100">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-slate-900">Recent Searches</h2>
                             <button
@@ -203,7 +203,7 @@ export function Home({ onNavigate }: HomeProps) {
                                 Clear All
                             </button>
                         </div>
-                        <div className="space-y-3">
+                        <div className="stack-y-3">
                             {recentSearches.map((r, idx) => (
                                 <div
                                     key={idx}
@@ -240,9 +240,6 @@ export function Home({ onNavigate }: HomeProps) {
                         <p className="text-orange-500 text-[11px] font-bold tracking-widest uppercase mb-1">Premium Experience</p>
                         <h2 className="text-3xl font-light text-slate-900">Special Trains</h2>
                     </div>
-                    <a href="#" className="flex items-center gap-1 text-slate-600 font-medium hover:text-slate-900 transition-colors text-sm">
-                        View all collections <ArrowRight size={16} />
-                    </a>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -279,14 +276,14 @@ export function Home({ onNavigate }: HomeProps) {
             {/* Results Section */}
             <div id="results" className="max-w-7xl mx-auto px-4 py-8 md:py-0">
                 {error && (
-                    <div className="mt-8 p-6 bg-red-50 border border-red-100 text-red-600 rounded-3xl text-sm font-bold shadow-sm flex items-center gap-3">
+                    <div className="mt-8 p-6 bg-red-50 border border-red-100 text-red-600 rounded-3xl text-sm font-bold shadow-xs flex items-center gap-3">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                         {error}
                     </div>
                 )}
 
                 {searched && routes.length === 0 && !loading && !error && (
-                    <div className="mt-20 text-center space-y-4">
+                    <div className="mt-20 text-center stack-y-4">
                         <div className="text-4xl">🚉</div>
                         <h3 className="text-2xl font-bold text-slate-900">No Optimal Routes Found</h3>
                         <p className="text-slate-500 font-medium">Try increasing your connection window or allowed changes.</p>
@@ -294,7 +291,7 @@ export function Home({ onNavigate }: HomeProps) {
                 )}
 
                 {routes.length > 0 && (
-                    <div className="mt-16 md:mt-24 space-y-4 md:space-y-5">
+                    <div className="mt-16 md:mt-24 stack-y-4 md:stack-y-5">
                         <div className="flex items-center justify-between gap-4 md:gap-6 pb-4 md:pb-6 border-b border-slate-100">
                             <div>
                                 <p className="text-orange-500 text-xs md:text-base font-semibold tracking-widest uppercase mb-1">Search Results</p>
@@ -412,7 +409,7 @@ interface SpecialTrainCardProps {
 
 function SpecialTrainCard({ title, description, image, tag, tagColor, rating, onViewRoutes }: SpecialTrainCardProps) {
     return (
-        <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 flex flex-col">
+        <div className="bg-white rounded-3xl overflow-hidden shadow-xs border border-slate-100 flex flex-col">
             <div className="h-56 bg-slate-200 w-full relative overflow-hidden group">
                 <img src={image} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
@@ -432,19 +429,8 @@ function SpecialTrainCard({ title, description, image, tag, tagColor, rating, on
                     >
                         View Routes
                     </button>
-                    <button className="w-12 h-12 flex items-center justify-center border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-red-500 transition-colors">
-                        <HeartIcon />
-                    </button>
                 </div>
             </div>
         </div>
     );
-}
-
-function HeartIcon() {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-        </svg>
-    )
 }

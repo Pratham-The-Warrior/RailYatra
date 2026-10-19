@@ -2,7 +2,7 @@
 
 ## Tech stack
 
-React 19, TypeScript ~5.8, Vite 6, Tailwind CSS 3, Framer Motion 12, Lucide React 0.564, Inter font.
+React 19, TypeScript ~5.8, Vite 6, Tailwind CSS 4, Framer Motion 12, Lucide React 0.564, Inter font.
 
 ## Navigation
 
@@ -15,7 +15,9 @@ Browser back button and deep-linking don't work because of this.
 ```
 frontend/src/
 ├── index.tsx                  — React root mount
-├── index.css                  — Global styles, Tailwind directives
+├── index.css                  — Global styles, Tailwind 4 theme (v3-compatible palette, line-heights, stack-y-* utility)
+├── routing.ts                 — URL <-> page mapping (History API; no router library)
+├── config/links.ts            — External links (GitHub, IRCTC, PNR enquiry)
 ├── types.ts                   — Shared interfaces (RouteStep, Route, SearchParams, Station)
 ├── App.tsx                    — Top-level router / state machine
 ├── components/
@@ -31,7 +33,7 @@ frontend/src/
 └── pages/
     ├── Home.tsx               — Hero, search, results, special trains
     ├── Schedules.tsx          — Train schedule lookup
-    ├── LiveStatus.tsx         — Live tracking (backend removed, UI still exists)
+    ├── LiveStatus.tsx         — Where's my train (position estimated from the timetable)
     └── CategoryRoutes.tsx     — Train category chart (Vande Bharat, etc.)
 ```
 
@@ -41,12 +43,12 @@ frontend/src/
 
 ## Styles (index.css)
 
-Uses Inter font (300-900 weights). Headings reference Plus Jakarta Sans but it's never imported so it falls back to Inter. Has some CSS custom properties under `:root` but Tailwind classes are used everywhere instead. Custom classes: `.premium-gradient`, `.glass-card`, `.shadow-premium`. Smooth scroll and thin scrollbars enabled globally.
+Imports Plus Jakarta Sans (body) and Outfit (headings) from Google Fonts. Has some CSS custom properties under `:root` but Tailwind classes are used everywhere instead. Custom classes: `.premium-gradient`, `.glass-card`, `.shadow-premium`. Smooth scroll and thin scrollbars enabled globally.
 
 ## Components
 
 ### Navbar.tsx
-Props: `onNavigate`, `currentPage`. Fixed position, glassmorphic background. 3 working nav links (Home, Schedules, Live Status). "My Bookings", "Alerts", "Login" are placeholder links. Mobile hamburger menu with Framer Motion animation. `category-routes` page has no navbar entry — only reachable from Home page.
+Props: `onNavigate`, `currentPage`. Fixed position, glassmorphic background. Nav links: Home, Schedules, Live Status. Mobile hamburger menu with Framer Motion animation. `category-routes` page has no navbar entry — only reachable from Home page.
 
 ### SearchForm.tsx
 Props: `onSearch(params, fromDisplay, toDisplay)`, `isLoading`. Manages SearchParams internally. Defaults: today's date, max_switches 5, max_wait 600, sort_by 'switches', top_k 50. Swap button inverts both codes and display strings. Date input blocks past dates. Spinner on submit button when loading.
@@ -93,9 +95,9 @@ Helper functions: `computeHalt()` (handles midnight crossing), `titleCase()` (du
 ### LiveStatus.tsx
 State: `trainNumber`, `loading`, `statusData`, `error`, `refreshing`. Same 4-state pattern as Schedules. Components in `src/components/LiveStatus/`.
 
-Note: the backend API for live status was removed. The frontend still tries to fetch `/api/livestatus/:trainNumber` but will get errors.
+Data comes from `/api/livestatus/:trainNumber`, which estimates the position from the timetable (`source: "timetable"`). The UI then shows "As per timetable" instead of on-time/delay badges, a notice banner, scheduled times only, and no platform (unknown). Fields for real delays and platforms (`is_delayed`, `delay_mins`, `platform`) are still rendered when a live source provides them.
 
-Has a 1.5s minimum spinner to prevent flash on fast responses. Results view shows train header, live itinerary timeline (color-coded dots, scheduled vs actual times), sidebar with current location and delay count.
+Has a 1.5s minimum spinner to prevent flash on fast responses. Results view shows train header, itinerary timeline (passed / current / in transit / upcoming), and a sidebar with stations covered, scheduled average speed and time left.
 
 ### CategoryRoutes.tsx
 Props: `category`, `categoryName`, `onNavigate`, `onViewTrain`. Fetches `/api/category/:category` on mount.
@@ -105,9 +107,9 @@ Client-side search filter. Desktop shows a table, mobile shows cards. Operating 
 ## API calls
 
 - `StationSearchInput` — GET `/api/stations?q=...` (250ms debounced)
-- `Home` — POST `/api/route`
+- `Home` — GET `/api/route` and `/api/route/pareto`
 - `Schedules` — GET `/api/schedule/:trainNumber`
-- `LiveStatus` — GET `/api/livestatus/:trainNumber` (backend removed)
+- `LiveStatus` — GET `/api/livestatus/:trainNumber`
 - `CategoryRoutes` — GET `/api/category/:category`
 
 ## localStorage keys
@@ -118,15 +120,14 @@ Client-side search filter. Desktop shows a table, mobile shows cards. Operating 
 
 ## Known issues
 
-- Plus Jakarta Sans referenced but never imported (falls back to Inter)
-- `titleCase()` duplicated across Schedules, LiveStatus, CategoryRoutes — should be shared
-- Live Status backend API removed; `/api/livestatus` returns 404
-- No React Router — no back button or deep linking
-- Dead UI elements: My Bookings, Alerts, Login, Check Availability, heart button, Check PNR Now, View all collections, Download PDF href="#"
-- Quick Services grid has 4 cols but only 2 cards
-- Schedules "Live Status" button has no onClick
-- category-routes not in navbar
-- Route Visualizer SVG is hardcoded/decorative
+- `titleCase()` is duplicated across Schedules, LiveStatus and CategoryRoutes; it could be shared.
+- Searching another train from inside Schedules or Live Status does not change the URL (navigation between pages does).
+- Live Status is a timetable estimate; actual running positions need a licensed data feed.
+- Route Visualizer SVG is decorative.
+
+## URLs
+
+`/`, `/schedules[/:train]`, `/live-status[/:train]`, `/category/:id` (see `src/routing.ts`). Back/Forward and reload work; the backend serves `index.html` for these paths.
 
 ## What works well
 

@@ -549,20 +549,51 @@
     "/api/livestatus/{trainNumber}": {
       "get": {
         "operationId": "getLiveStatus",
-        "summary": "Live running status (not available yet)",
+        "summary": "Where the train should be now, estimated from the timetable",
         "parameters": [
           {
             "name": "trainNumber",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^\\d{1,5}$"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "description": "Start date of the run (YYYY-MM-DD, IST), within 31 days of today.",
+            "schema": {
+              "type": "string",
+              "format": "date"
             }
           }
         ],
         "responses": {
-          "503": {
-            "description": "Unavailable until a live data source exists",
+          "200": {
+            "description": "Estimated position",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid train number or date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Train not in the timetable, or it does not start its journey on `date`",
             "content": {
               "application/json": {
                 "schema": {
@@ -580,8 +611,19 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Engine overloaded or starting; retry after Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        }
+        },
+        "description": "There is no live running feed: positions and times come from the published timetable (source: \"timetable\") and never report delays or platforms. Without `date`, the run currently en route is shown, else one that arrived within the last 6 hours, else the next run to depart. Times are Indian Standard Time."
       }
     },
     "/api/health": {
@@ -1044,6 +1086,207 @@
           "platform"
         ],
         "additionalProperties": false
+      },
+      "LiveStatus": {
+        "type": "object",
+        "required": [
+          "source",
+          "notice",
+          "meta",
+          "itinerary",
+          "activeIdx",
+          "isMoving",
+          "coveredStationsCount",
+          "totalStations",
+          "remainingTime",
+          "displayLocation",
+          "progressPercent",
+          "currentKM",
+          "avgSpeed"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "timetable"
+            ]
+          },
+          "notice": {
+            "type": "string"
+          },
+          "meta": {
+            "type": "object",
+            "required": [
+              "train_no",
+              "train_name",
+              "start_date",
+              "current_location",
+              "fetched_at",
+              "status",
+              "total_stations"
+            ],
+            "properties": {
+              "train_no": {
+                "type": "string"
+              },
+              "train_name": {
+                "type": "string"
+              },
+              "start_date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "current_location": {
+                "type": "string"
+              },
+              "fetched_at": {
+                "type": "string",
+                "description": "\"DD-Mon HH:MM\" (IST)"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "NOT_STARTED",
+                  "AT_STATION",
+                  "RUNNING",
+                  "COMPLETED"
+                ]
+              },
+              "total_stations": {
+                "type": "integer"
+              }
+            }
+          },
+          "itinerary": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "station",
+                "station_code",
+                "platform",
+                "status",
+                "is_delayed",
+                "is_source",
+                "is_destination",
+                "timings",
+                "isPassed",
+                "isCurrent",
+                "isUpcoming",
+                "haltMins",
+                "distance_km"
+              ],
+              "properties": {
+                "station": {
+                  "type": "string"
+                },
+                "station_code": {
+                  "type": "string"
+                },
+                "platform": {
+                  "type": "string",
+                  "description": "Always empty: platforms are not in the timetable"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SCHEDULED",
+                    "DEPARTED",
+                    "AT STATION",
+                    "ARRIVED"
+                  ]
+                },
+                "is_delayed": {
+                  "type": "boolean",
+                  "const": false
+                },
+                "is_source": {
+                  "type": "boolean"
+                },
+                "is_destination": {
+                  "type": "boolean"
+                },
+                "timings": {
+                  "type": "object",
+                  "required": [
+                    "sch_arr",
+                    "act_arr",
+                    "sch_dep",
+                    "act_dep"
+                  ],
+                  "properties": {
+                    "sch_arr": {
+                      "type": "string",
+                      "description": "\"HH:MM DD-Mon\" (IST), or SOURCE / DEST"
+                    },
+                    "act_arr": {
+                      "type": "string",
+                      "description": "\"HH:MM DD-Mon\" (IST), or SOURCE / DEST"
+                    },
+                    "sch_dep": {
+                      "type": "string",
+                      "description": "\"HH:MM DD-Mon\" (IST), or SOURCE / DEST"
+                    },
+                    "act_dep": {
+                      "type": "string",
+                      "description": "\"HH:MM DD-Mon\" (IST), or SOURCE / DEST"
+                    }
+                  }
+                },
+                "isPassed": {
+                  "type": "boolean"
+                },
+                "isCurrent": {
+                  "type": "boolean"
+                },
+                "isUpcoming": {
+                  "type": "boolean"
+                },
+                "haltMins": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "distance_km": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "activeIdx": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "isMoving": {
+            "type": "boolean"
+          },
+          "coveredStationsCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalStations": {
+            "type": "integer",
+            "minimum": 2
+          },
+          "remainingTime": {
+            "type": "string",
+            "description": "\"HH:MM\" until arrival at the destination, or \"--:--\""
+          },
+          "displayLocation": {
+            "type": "string"
+          },
+          "progressPercent": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "currentKM": {
+            "type": "number"
+          },
+          "avgSpeed": {
+            "type": "number",
+            "description": "Scheduled average speed, km/h"
+          }
+        }
       }
     }
   }

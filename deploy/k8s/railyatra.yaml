@@ -42,6 +42,9 @@ spec:
             - { name: LOG_FORMAT, value: "json" }
             # Proxy hops in front of the pod: 1 = ingress only; 2 = CDN + ingress.
             - { name: TRUST_PROXY, value: "1" }
+            # Pod name as the instance id in logs, /api/health and X-Instance-Id.
+            - name: INSTANCE_ID
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
           resources:
             requests: { cpu: "2", memory: "512Mi" }
             limits:   { cpu: "2", memory: "768Mi" }

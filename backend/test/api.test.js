@@ -123,10 +123,27 @@ test('GET /api/route matches POST and is cacheable', async () => {
     assert.strictEqual((await fetch(`${base}/api/route?from=NDLS`)).status, 400);
 });
 
-test('live status endpoint explains it is unavailable', async () => {
+test('live status is estimated from the timetable and says so', async () => {
     const res = await fetch(`${base}/api/livestatus/12138`);
-    assert.strictEqual(res.status, 503);
-    assert.match((await res.json()).error, /unavailable/i);
+    assert.strictEqual(res.status, 200);
+    assert.match(res.headers.get('cache-control'), /max-age=30/);
+    const body = await res.json();
+    assert.strictEqual(body.source, 'timetable');
+    assert.strictEqual(body.meta.train_no, '12138');
+    assert.strictEqual(body.itinerary.length, body.totalStations);
+    assert.ok(['NOT_STARTED', 'AT_STATION', 'RUNNING', 'COMPLETED'].includes(body.meta.status));
+    assert.ok(body.itinerary.every((s) => !s.is_delayed && s.platform === ''));
+
+    // An explicit run date: 01040 starts its journey on Mondays only.
+    assert.strictEqual((await fetch(`${base}/api/livestatus/1040?date=2026-10-19`)).status, 200);
+    const wrongDay = await fetch(`${base}/api/livestatus/1040?date=2026-10-20`);
+    assert.strictEqual(wrongDay.status, 404);
+    assert.match((await wrongDay.json()).error, /does not start/);
+
+    assert.strictEqual((await fetch(`${base}/api/livestatus/99999`)).status, 404);
+    assert.strictEqual((await fetch(`${base}/api/livestatus/abc`)).status, 400);
+    assert.strictEqual((await fetch(`${base}/api/livestatus/12138?date=2026-02-31`)).status, 400);
+    assert.strictEqual((await fetch(`${base}/api/livestatus/12138?date=2030-01-01`)).status, 400);
 });
 
 test('pareto endpoint returns a strictly improving frontier', async () => {

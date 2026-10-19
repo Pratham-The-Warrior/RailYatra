@@ -47,6 +47,11 @@ def main(argv=None):
                   + (', '.join(stale) or 'none') + f"; rejected trains: {len(result['rejected'])}."
                   + ' Run: python3 -m datapipe publish', file=sys.stderr)
             return 1
+        unserved = report.unserved_city_stations(result, config, root)
+        if unserved:
+            print('Data check FAILED. City searches include stations no train serves (fix city_stations.json): '
+                  + '; '.join(f"{city}: {', '.join(codes)}" for city, codes in sorted(unserved.items())), file=sys.stderr)
+            return 1
         print(f"Data check OK: {len(result['trains'])} trains, files match pipeline output.")
         return 0
     text = report.render(result, d, reasons, config, root)

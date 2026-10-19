@@ -14,6 +14,7 @@ const { TokenBucketLimiter, createEngineGate } = require('./platform/rateLimit')
  */
 function createContainer({ env = process.env } = {}) {
     const config = loadConfig(env);
+    log.setInstance(config.instanceId);
     const caches = new CacheRegistry();
     const referenceData = createReferenceData({ dir: config.referenceDataDir, log });
     const routing = createRouting({ config, log, metrics });

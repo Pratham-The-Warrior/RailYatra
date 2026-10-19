@@ -3,6 +3,18 @@ import json
 import os
 
 
+def unserved_city_stations(result, config, root):
+    """{city: [codes]} for city-search stations that no train serves (empty if all are served)."""
+    city_path = os.path.join(root, config.get('coverage', {}).get('city_stations', 'city_stations.json'))
+    if not os.path.exists(city_path):
+        return {}
+    with open(city_path, encoding='utf-8') as f:
+        cities = json.load(f)
+    codes = {s['station_code'] for t in result['trains'] for s in t['schedule']}
+    missing = {city: [c for c in v['stations'] if c not in codes] for city, v in cities.items()}
+    return {k: v for k, v in missing.items() if v}
+
+
 def render(result, d, gate_reasons, config, root, max_list=25):
     trains = result['trains']
     codes = {s['station_code'] for t in trains for s in t['schedule']}
@@ -22,17 +34,12 @@ def render(result, d, gate_reasons, config, root, max_list=25):
 
     # Coverage checks against reference files the product depends on.
     lines += ['', '## Coverage', '']
-    city_path = os.path.join(root, config.get('coverage', {}).get('city_stations', 'city_stations.json'))
-    if os.path.exists(city_path):
-        with open(city_path, encoding='utf-8') as f:
-            cities = json.load(f)
-        missing = {city: [c for c in v['stations'] if c not in codes] for city, v in cities.items()}
-        missing = {k: v for k, v in missing.items() if v}
-        if missing:
-            lines.append('City searches reference stations with **no trains** in the data:')
-            lines += [f'- {city}: ' + ', '.join(v) for city, v in sorted(missing.items())]
-        else:
-            lines.append('- Every station referenced by city searches has trains.')
+    missing = unserved_city_stations(result, config, root)
+    if missing:
+        lines.append('City searches reference stations with **no trains** in the data:')
+        lines += [f'- {city}: ' + ', '.join(v) for city, v in sorted(missing.items())]
+    else:
+        lines.append('- Every station referenced by city searches has trains.')
     by_count = {}
     for t in trains:
         for s in t['schedule']:

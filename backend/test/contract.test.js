@@ -37,7 +37,9 @@ const CASES = [
     ['GET', '/api/category/{category}', '/api/category/nope', 404],
     ['GET', '/api/pdf/{trainNumber}', '/api/pdf/abc', 400],
     ['GET', '/api/pdf/{trainNumber}', '/api/pdf/12138', 404],
-    ['GET', '/api/livestatus/{trainNumber}', '/api/livestatus/12138', 503],
+    ['GET', '/api/livestatus/{trainNumber}', '/api/livestatus/12138', 200],
+    ['GET', '/api/livestatus/{trainNumber}', '/api/livestatus/99999', 404],
+    ['GET', '/api/livestatus/{trainNumber}', '/api/livestatus/abc', 400],
     ['GET', '/api/health', '/api/health', 200],
 ];
 

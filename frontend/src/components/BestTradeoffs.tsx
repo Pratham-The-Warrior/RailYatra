@@ -26,7 +26,7 @@ export const BestTradeoffs: React.FC<BestTradeoffsProps> = ({ options }) => {
     const earliest = Math.min(...options.map(arrivalAbs));
 
     return (
-        <section aria-label="Best trade-offs" className="space-y-3">
+        <section aria-label="Best trade-offs" className="stack-y-3">
             <div>
                 <p className="text-orange-500 text-xs md:text-sm font-semibold tracking-widest uppercase">Best trade-offs</p>
                 <p className="text-sm text-slate-500">
@@ -45,7 +45,7 @@ export const BestTradeoffs: React.FC<BestTradeoffsProps> = ({ options }) => {
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
-                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs"
                         >
                             <div className="flex items-center justify-between gap-2">
                                 <span className="text-sm font-bold text-slate-900">{changesLabel(r.switches)}</span>
@@ -72,7 +72,7 @@ export const BestTradeoffs: React.FC<BestTradeoffsProps> = ({ options }) => {
                                 <Clock className="h-3.5 w-3.5" aria-hidden />
                                 Departs {r.legs[0].departure_time} · {r.total_time_formatted} · {r.total_distance_km} km
                             </div>
-                            <ol className="mt-3 space-y-1 text-xs text-slate-600">
+                            <ol className="mt-3 stack-y-1 text-xs text-slate-600">
                                 {r.legs.map((l, li) => (
                                     <li key={li} className="truncate">
                                         <span className="font-semibold text-slate-800">{l.train_number}</span>{' '}

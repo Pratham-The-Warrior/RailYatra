@@ -14,9 +14,9 @@ export const RouteCardMobile: React.FC<RouteCardMobileProps> = ({ route }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden active:scale-[0.97] transition-transform duration-150 shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden active:scale-[0.97] transition-transform duration-150 shadow-xs">
             {/* ── Top accent ── */}
-            <div className="h-[2.5px] bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-400" />
+            <div className="h-[2.5px] bg-linear-to-r from-blue-500 via-indigo-500 to-blue-400" />
 
             {/* ── Header: duration · distance · switches ── */}
             <div className="flex items-center justify-between px-2.5 py-2 border-b border-slate-100">
@@ -28,7 +28,7 @@ export const RouteCardMobile: React.FC<RouteCardMobileProps> = ({ route }) => {
                         {route.total_distance_km}km
                     </span>
                 </div>
-                <div className={`px-1.5 py-[2px] rounded text-[7px] font-bold uppercase tracking-wider flex items-center gap-0.5 leading-none shrink-0 shadow-sm ${route.switches === 0
+                <div className={`px-1.5 py-[2px] rounded text-[7px] font-bold uppercase tracking-wider flex items-center gap-0.5 leading-none shrink-0 shadow-xs ${route.switches === 0
                     ? 'bg-emerald-500 text-white'
                     : 'bg-slate-800 text-white'
                     }`}>
@@ -38,7 +38,7 @@ export const RouteCardMobile: React.FC<RouteCardMobileProps> = ({ route }) => {
             </div>
 
             {/* ── Legs ── */}
-            <div className="px-2.5 py-2 space-y-1.5">
+            <div className="px-2.5 py-2 stack-y-1.5">
                 {route.legs.map((leg, i) => (
                     <React.Fragment key={i}>
                         {/* Train name + number */}
@@ -64,7 +64,7 @@ export const RouteCardMobile: React.FC<RouteCardMobileProps> = ({ route }) => {
                             </div>
 
                             <div className="flex-1 flex items-center px-0.5">
-                                <div className="w-full h-[1px] bg-slate-200 relative">
+                                <div className="w-full h-px bg-slate-200 relative">
                                     <ArrowRight size={7} className="absolute -right-0.5 top-1/2 -translate-y-1/2 text-slate-300" />
                                 </div>
                             </div>

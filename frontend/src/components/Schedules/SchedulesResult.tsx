@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Calendar, FileText, ArrowRight,
-    Wifi, UtensilsCrossed, Plug, Cross, Activity, HelpCircle,
+    Activity, HelpCircle,
     Clock, MapPin, LayoutList, LayoutGrid
 } from 'lucide-react';
 import { TrainSchedule, ScheduleItem } from '../../pages/Schedules'; // Assume types are in types.ts or exported from Schedules.tsx
 import { titleCase, computeHalt } from '../../pages/Schedules';
 import { BackButton } from '../Common/BackButton';
+import { IRCTC_SEARCH_URL, ISSUES_URL } from '@/config/links';
 
 interface SchedulesResultProps {
     schedule: TrainSchedule;
@@ -16,22 +17,16 @@ interface SchedulesResultProps {
     handleSubmit: (e: React.FormEvent) => void;
     handleBack: () => void;
     resultsRef: React.RefObject<HTMLDivElement | null>;
+    onLiveStatus?: () => void;
 }
 
 export const SchedulesResult: React.FC<SchedulesResultProps> = ({
-    schedule, trainNumber, setTrainNumber, handleSubmit, handleBack, resultsRef
+    schedule, trainNumber, setTrainNumber, handleSubmit, handleBack, resultsRef, onLiveStatus
 }) => {
     const [mobileView, setMobileView] = useState<'list' | 'cards'>('list');
     const isDailyService = schedule?.operating_days ? Object.values(schedule.operating_days).every(Boolean) : false;
     const src = schedule?.schedule?.[0];
     const dest = schedule?.schedule?.[schedule.schedule.length - 1];
-
-    const amenities = [
-        { icon: UtensilsCrossed, label: 'Onboard Catering', color: '#ea580c' },
-        { icon: Wifi, label: 'High Speed WiFi', color: '#2563eb' },
-        { icon: Plug, label: 'Charging Points', color: '#ca8a04' },
-        { icon: Cross, label: 'First Aid', color: '#dc2626' },
-    ];
 
     return (
         <div className="min-h-screen pt-20 md:pt-24 pb-12 md:pb-20 bg-[#f5f6f8]">
@@ -51,7 +46,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                 value={trainNumber}
                                 onChange={e => setTrainNumber(e.target.value)}
                                 placeholder="Train No / Name"
-                                className="w-full bg-white border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-100 transition-all placeholder:text-slate-400"
+                                className="w-full bg-white border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-[13px] font-medium text-slate-700 focus:outline-hidden focus:border-orange-400 focus:ring-1 focus:ring-orange-100 transition-all placeholder:text-slate-400"
                             />
                         </form>
                     </div>
@@ -59,14 +54,14 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                     {/* ═══════ TRAIN HEADER ═══════ */}
                     <div className="bg-white rounded-xl md:rounded-2xl border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 md:p-7 mb-4 md:mb-5">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-                            <div className="space-y-2.5">
+                            <div className="stack-y-2.5">
                                 <span className={`inline-block text-[11px] font-bold px-2.5 py-[3px] rounded-full border leading-none ${isDailyService
                                     ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
                                     : 'text-orange-600 bg-orange-50 border-orange-200'
                                     }`}>
                                     {isDailyService ? 'Daily Service' : 'Limited Service'}
                                 </span>
-                                <h1 className="text-xl md:text-3xl font-extrabold text-slate-900 leading-tight font-display tracking-tight">
+                                <h1 className="text-xl md:text-3xl font-extrabold text-slate-900 leading-tight md:leading-9 font-display tracking-tight">
                                     {schedule!.train_number} – {titleCase(schedule!.train_name)}
                                 </h1>
                                 {src && dest && (
@@ -78,16 +73,17 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                 )}
                             </div>
                             <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 md:gap-2.5 shrink-0 mt-4 lg:mt-0">
-                                <button className="inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all shadow-sm shadow-orange-500/15 active:scale-[0.97]">
+                                <a href={IRCTC_SEARCH_URL} target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all shadow-xs shadow-orange-500/15 active:scale-[0.97]">
                                     <Calendar className="w-4 h-4" />
-                                    Check Availability
-                                </button>
-                                <button className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all active:scale-[0.97]">
+                                    Check Availability on IRCTC
+                                </a>
+                                {onLiveStatus && <button type="button" onClick={onLiveStatus} className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-4 md:px-5 py-2.5 rounded-lg text-sm transition-all active:scale-[0.97]">
                                     <Activity className="w-4 h-4" />
                                     Live Status
-                                </button>
-                                {schedule!.hasPdf && (
-                                    <a href="#" target="_blank" rel="noopener noreferrer"
+                                </button>}
+                                {schedule!.pdfUrl && (
+                                    <a href={schedule!.pdfUrl} target="_blank" rel="noopener noreferrer"
                                         className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-5 py-2.5 rounded-lg text-sm transition-all active:scale-[0.97]">
                                         <FileText className="w-4 h-4" />
                                         Download PDF
@@ -95,16 +91,6 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                 )}
                             </div>
                         </div>
-                    </div>
-
-                    {/* ═══════ AMENITY STRIP ═══════ */}
-                    <div className="flex flex-wrap items-center gap-x-4 md:gap-x-8 gap-y-2 md:gap-y-3 pl-1 mb-5 md:mb-8">
-                        {amenities.map(({ icon: Icon, label, color }) => (
-                            <div key={label} className="flex items-center gap-1.5 md:gap-2.5 text-xs md:text-sm font-medium text-slate-600">
-                                <Icon className="w-4 h-4 md:w-[18px] md:h-[18px]" style={{ color }} />
-                                <span>{label}</span>
-                            </div>
-                        ))}
                     </div>
 
                     {/* ═══════ MAIN GRID ═══════ */}
@@ -117,7 +103,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                     {/* Mobile view toggle */}
                                     <div className="sm:hidden relative flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
                                         <motion.div
-                                            className="absolute top-0.5 bottom-0.5 rounded-md bg-white shadow-sm border border-slate-200"
+                                            className="absolute top-0.5 bottom-0.5 rounded-md bg-white shadow-xs border border-slate-200"
                                             initial={false}
                                             animate={{
                                                 left: mobileView === 'list' ? '2px' : '50%',
@@ -144,7 +130,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                             <LayoutGrid size={13} />
                                         </button>
                                     </div>
-                                    <span className="hidden md:inline text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Effective Feb 2026</span>
+                                    <span className="hidden md:inline text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">Effective Feb 2026</span>
                                 </div>
                             </div>
 
@@ -175,7 +161,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                                         initial={{ opacity: 0, scale: 0.95 }}
                                                         animate={{ opacity: 1, scale: 1 }}
                                                         transition={{ duration: 0.25, delay: Math.min(idx, 15) * 0.03 }}
-                                                        className={`relative bg-slate-50/80 rounded-lg border border-slate-100 border-l-[3px] ${borderAccent} p-2.5 hover:bg-white hover:shadow-sm transition-all`}
+                                                        className={`relative bg-slate-50/80 rounded-lg border border-slate-100 border-l-[3px] ${borderAccent} p-2.5 hover:bg-white hover:shadow-xs transition-all`}
                                                     >
                                                         {/* Station name + code */}
                                                         <div className="flex items-start justify-between gap-1 mb-1.5">
@@ -187,7 +173,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                                                     {stop.station_code}
                                                                 </p>
                                                             </div>
-                                                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-500 leading-none shrink-0">
+                                                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-sm bg-white border border-slate-200 text-slate-500 leading-none shrink-0">
                                                                 D{stop.day_of_journey}
                                                             </span>
                                                         </div>
@@ -234,8 +220,8 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                         >
                                             {/* Existing mobile list header */}
                                             <div className="grid grid-cols-[1fr_100px] px-4 py-2.5 border-b border-slate-100 bg-slate-50/50">
-                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Station</span>
-                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Arrive/Depart</span>
+                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Station</span>
+                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Arrive/Depart</span>
                                             </div>
                                             <div className="divide-y divide-slate-50">
                                                 {schedule!.schedule.map((stop: ScheduleItem, idx: number) => {
@@ -283,11 +269,11 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                             <div className="hidden sm:block overflow-x-auto">
                                 <div className="min-w-[540px]">
                                     <div className="grid grid-cols-[1fr_140px_72px_72px_64px] px-6 py-3 border-b border-slate-100 bg-slate-50/50">
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Station</span>
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">Arrive/Depart</span>
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Halt</span>
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Dist.</span>
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] text-center">Day</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Station</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Arrive/Depart</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Halt</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Dist.</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Day</span>
                                     </div>
                                     <div className="divide-y divide-slate-50">
                                         {schedule!.schedule.map((stop: ScheduleItem, idx: number) => {
@@ -316,7 +302,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                                     <span className="text-sm font-medium text-center text-slate-500">{halt}</span>
                                                     <span className="text-sm font-medium text-center text-slate-500">{Math.round(stop.distance_km)} km</span>
                                                     <div className="flex justify-center">
-                                                        <span className="text-[11px] font-bold px-2 py-[3px] rounded leading-none border border-slate-200 text-slate-600">
+                                                        <span className="text-[11px] font-bold px-2 py-[3px] rounded-sm leading-none border border-slate-200 text-slate-600">
                                                             Day {stop.day_of_journey}
                                                         </span>
                                                     </div>
@@ -329,18 +315,18 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                         </div>
 
                         {/* ── SIDEBAR ── */}
-                        <div className="space-y-5">
+                        <div className="stack-y-5">
                             <div className="bg-white rounded-2xl border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5">
                                 <div className="flex items-start gap-3 mb-3">
                                     <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
                                         <HelpCircle className="w-4 h-4 text-emerald-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-slate-900 leading-snug">Need Help?</h3>
-                                        <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">Talk to our travel experts for easy bookings.</p>
+                                        <h3 className="text-sm font-bold text-slate-900 leading-snug">Spotted a mistake?</h3>
+                                        <p className="text-[13px] text-slate-500 mt-1 leading-relaxed">Timetables change. Let us know if this schedule looks wrong.</p>
                                     </div>
                                 </div>
-                                <a href="#" className="text-orange-500 hover:text-orange-600 text-sm font-bold transition-colors">Contact Support</a>
+                                <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600 text-sm font-bold transition-colors">Report an Issue</a>
                             </div>
 
                             {src && dest && (() => {
@@ -365,11 +351,11 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                 return (
                                     <div className="bg-white rounded-2xl border border-slate-200/70 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5">
                                         <h3 className="text-sm font-bold text-slate-900 mb-5">Journey Stats</h3>
-                                        <div className="space-y-4">
+                                        <div className="stack-y-4">
                                             {stats.map((stat, i) => (
                                                 <React.Fragment key={stat.label}>
                                                     <div className="flex items-center gap-3.5">
-                                                        <div className={`w-9 h-9 rounded-full ${stat.color} flex items-center justify-center shrink-0 shadow-sm`}>
+                                                        <div className={`w-9 h-9 rounded-full ${stat.color} flex items-center justify-center shrink-0 shadow-xs`}>
                                                             {stat.icon}
                                                         </div>
                                                         <div>
@@ -426,7 +412,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                     })}
                                 </svg>
                                 <div className="absolute top-5 left-5 md:left-8">
-                                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm px-3 py-2">
+                                    <div className="bg-white rounded-lg border border-slate-200 shadow-xs px-3 py-2">
                                         <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider leading-none mb-1">Start</p>
                                         <div className="flex items-center gap-1.5">
                                             <span className="w-[7px] h-[7px] rounded-full bg-emerald-500 shrink-0" />
@@ -435,7 +421,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                     </div>
                                 </div>
                                 <div className="absolute bottom-5 right-5 md:right-8">
-                                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm px-3 py-2">
+                                    <div className="bg-white rounded-lg border border-slate-200 shadow-xs px-3 py-2">
                                         <p className="text-[9px] font-bold text-orange-600 uppercase tracking-wider leading-none mb-1">End</p>
                                         <div className="flex items-center gap-1.5">
                                             <span className="w-[7px] h-[7px] rounded-full bg-orange-500 shrink-0" />
@@ -443,7 +429,7 @@ export const SchedulesResult: React.FC<SchedulesResultProps> = ({
                                         </div>
                                     </div>
                                 </div>
-                                <div className="absolute top-5 right-5 md:right-8 bg-white/95 backdrop-blur-sm rounded-lg border border-slate-200 px-3 py-1.5 shadow-sm">
+                                <div className="absolute top-5 right-5 md:right-8 bg-white/95 backdrop-blur-xs rounded-lg border border-slate-200 px-3 py-1.5 shadow-xs">
                                     <p className="text-[12px] font-bold text-slate-600">{Math.round(dest.distance_km)}km Total</p>
                                 </div>
                             </div>

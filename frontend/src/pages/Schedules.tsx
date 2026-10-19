@@ -69,7 +69,7 @@ const saveRecent = (trainNumber: string, trainName: string) => {
 /*  MAIN COMPONENT                                                        */
 /* ═══════════════════════════════════════════════════════════════════════ */
 interface SchedulesProps {
-    onNavigate?: (page: 'home' | 'schedules' | 'category-routes') => void;
+    onNavigate?: (page: 'home' | 'schedules' | 'live-status' | 'category-routes', trainNumber?: string | null) => void;
     initialTrainNumber?: string | null;
 }
 
@@ -184,6 +184,7 @@ export const Schedules: React.FC<SchedulesProps> = ({ onNavigate, initialTrainNu
             handleSubmit={handleSubmit}
             handleBack={handleBack}
             resultsRef={resultsRef}
+            onLiveStatus={onNavigate ? () => onNavigate('live-status', schedule!.train_number) : undefined}
         />
     );
 };

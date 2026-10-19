@@ -19,6 +19,8 @@
 - **Progressive Loading**: Fetches up to 50 routes in a single engine call, displayed 10 at a time with a "Load More" button.
 - **Transfer Validation**: Validates connecting times at junctions (minimum 30 min buffer, max wait limit configurable).
 - **Station Search**: Fuse.js-powered typo-tolerant autocomplete with keyboard navigation and live match highlighting.
+- **Train Schedules**: Full timetable of any train, with operating days and halts.
+- **Where's my train**: Estimated current position of any train, computed from its timetable (Indian Standard Time). Clearly labelled as an estimate: there is no live running feed, so delays and platforms are never shown.
 - **Modern UI**: React 19 frontend with glassmorphism, animations, and responsive design.
 
 ---
@@ -62,7 +64,7 @@ A modular monolith with feature modules, shared platform ports and a single comp
 
 See [`docs/CAPACITY.md`](docs/CAPACITY.md) for the measured capacity model (100,000 concurrent users) and [`docs/SCALING_ROADMAP.md`](docs/SCALING_ROADMAP.md) for the audit and phased plan.
 
-- **Engine pool**: `ENGINE_POOL_SIZE` engine processes (default: min(4, CPU cores)), least-loaded dispatch, crash isolation and auto-respawn.
+- **Engine pool**: `ENGINE_POOL_SIZE` engine processes (default sized to the CPU and memory limit, at most 4), least-loaded dispatch, crash isolation and auto-respawn.
 - **Caching**: in-process LRU with request coalescing for routes (keyed by weekday), schedules and autocomplete; CDN-friendly `Cache-Control` headers.
 - **Endpoints**: `/healthz` (liveness), `/readyz` (readiness), `/metrics` (Prometheus).
 - **Tests**: `cd backend && npm test` (requires a built engine). CI (`.github/workflows/ci.yml`) also runs a frontend typecheck/build, a load-test gate and a Docker smoke test.
@@ -75,11 +77,15 @@ See [`docs/CAPACITY.md`](docs/CAPACITY.md) for the measured capacity model (100,
 
 | Env var | Default | Purpose |
 |---|---|---|
-| `ENGINE_POOL_SIZE` | min(4, CPU cores) | Engine processes per instance (set it explicitly in containers) |
+| `ENGINE_POOL_SIZE` | min(4, cores, memory ÷ ~160 MB) | Engine processes per instance |
 | `ENGINE_TIMEOUT_MS` | 10000 | Per-request engine timeout |
 | `ENGINE_MAX_QUEUE` | 200 | In-flight requests per engine before shedding with 503 |
 | `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route result cache |
-| `ROUTE_CACHE_MAX_MB` / `SMALL_CACHE_MAX_MB` | 256 / 32 | Cache memory budgets |
+| `ROUTE_CACHE_MAX_MB` / `SMALL_CACHE_MAX_MB` | 25% / 3% of memory (max 256 / 32) | Cache memory budgets |
+| `TRUST_PROXY` | 1 | Proxy hops trusted for the client IP (2 behind Cloudflare + Railway) |
+| `PDF_BASE_URL` | unset | Where schedule PDFs are hosted; enables "Download PDF" |
+
+The full list is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#configuration).
 
 ---
 
@@ -102,7 +108,7 @@ flowchart TD
 - **React 19 frontend**: Single-page app with Framer Motion animations.
 
 ### Tech Stack
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide Icons.
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS 4, Framer Motion, Lucide Icons.
 - **Backend**: Node.js, Express.js.
 - **Engine**: C++17, `nlohmann/json` for JSON serialization.
 
@@ -110,8 +116,10 @@ flowchart TD
 
 ## Setup & Installation
 
+Requires Node.js 22.12+ and a C++17 compiler. The quickest path is Docker: `docker build -t railyatra . && docker run -p 3000:3000 railyatra`.
+
 ### 1. Build the Engine
-Requires `g++` (MinGW-w64) installed and in your PATH.
+Linux/macOS: `make -C engine`. Windows (MinGW-w64 `g++` in your PATH):
 ```bash
 cd engine
 ./build.ps1
@@ -123,15 +131,15 @@ Ensure `master_train_data.json` and `city_stations.json` are present in the proj
 ### 3. Start the Backend
 ```bash
 cd backend
-npm install
-node server.js # Starts on Port 3000
+npm ci
+node server.js # Starts on Port 3000 (serves frontend/dist when built)
 ```
 
 ### 4. Start the Frontend
 ```bash
 cd frontend
-npm install
-npm run dev # Starts on Port 5173
+npm ci
+npm run dev # Starts on Port 5173, proxies /api to port 3000
 ```
 
 ## Project Structure
@@ -168,7 +176,7 @@ Calculates routes between two stations.
 | `sort_by` | `String` | `time`, `distance`, or `switches` | `switches` |
 | `max_wait` | `Int` | Max wait time at transfers (minutes) | `600` (10h) |
 | `max_switches`| `Int` | Max number of transfers allowed | `5` |
-| `top_k` | `Int` | Number of results to return | `50` |
+| `top_k` | `Int` | Number of results to return (max 50) | `10` |
 
 ### `GET /api/stations`
 Fuzzy-autocomplete endpoint for station search (Fuse.js). Returns top 10 matches ranked by relevance.
@@ -180,15 +188,21 @@ Fetches trains for a specific collection (e.g., `vandebharat`, `tejas`). Returns
 Fetches the full schedule for a specific train. Returns station stops, arrival/departure times, and operating days.
 
 ### `GET /api/pdf/:trainNumber`
-Serves the PDF timetable for the requested train (if available).
+Serves the PDF timetable for the requested train (if available; see `PDF_BASE_URL`).
+
+### `GET /api/livestatus/:trainNumber[?date=YYYY-MM-DD]`
+Where the train should be now according to its timetable: not started, at a station, running between two stations (with progress), or arrived. `date` picks a run by its start date. Responses say `"source": "timetable"`.
+
+The complete contract (every endpoint, status code and schema) is [`docs/openapi.json`](docs/openapi.json).
 
 ---
 
 ## Testing & Benchmarks
-The system includes a verification suite in `/tests`:
-- **Correctness**: Validates that found routes actually exist in the raw JSON schedules.
-- **Performance**: Measures engine latency (target: <10ms per search).
-- **Integrity**: Ensures no "illegal" transfers (e.g., departing before arrival) are returned.
+- **Backend**: `cd backend && npm test` — API, contract (OpenAPI), lifecycle, rate limiting and live-status tests (needs a built engine).
+- **Frontend**: `cd frontend && npm test` (Vitest) and `npx tsc -p tsconfig.app.json --noEmit`.
+- **Engine correctness**: `python3 engine/tests/validate_pareto.py` checks every route against the raw timetable.
+- **Data**: `python3 -m datapipe check` validates the published timetable files and city search groups.
+- **Load**: `cd loadtest && npm ci && node run.js mixed` (CI runs a load gate).
 
 ### Engine Throughput Benchmark
 Based on local system benchmarking (Intel i5/equivalent, single-process engine):

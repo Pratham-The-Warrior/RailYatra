@@ -30,7 +30,12 @@ const args = Object.fromEntries(process.argv.slice(3).reduce((acc, a, i, arr) =>
     acc.push([name, FLAGS.has(name) ? true : arr[i + 1]]);
     return acc;
 }, []));
+const SCENARIOS = ['route', 'mixed', 'pareto'];
 const scenario = process.argv[2] || 'route';
+if (!SCENARIOS.includes(scenario)) {
+    console.error(`Unknown scenario ${JSON.stringify(scenario)}; expected one of: ${SCENARIOS.join(', ')}`);
+    process.exit(2);
+}
 const url = args.url || 'http://localhost:3000';
 const connections = Number(args.connections || 100);
 const duration = Number(args.duration || 20);

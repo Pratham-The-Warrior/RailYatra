@@ -9,7 +9,7 @@ RUN make -j$(nproc)
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install --frozen-lockfile || npm install
+RUN npm ci --no-audit --no-fund
 COPY frontend/ .
 RUN npm run build
 
@@ -21,7 +21,7 @@ WORKDIR /app
 # Only copy production backend dependencies
 WORKDIR /app/backend
 COPY backend/package*.json ./
-RUN npm install --production --frozen-lockfile || npm install --production
+RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 
 # Compiled engine + built frontend
 COPY --from=engine-builder /app/engine/route_engine /app/engine/route_engine
@@ -39,8 +39,9 @@ EXPOSE 3000
 RUN chown -R node:node /app
 USER node
 
+# Uses $PORT: hosts such as Railway assign their own port.
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/readyz || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/readyz" > /dev/null || exit 1
 
 WORKDIR /app/backend
 CMD ["node", "server.js"]
