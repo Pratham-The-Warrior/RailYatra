@@ -19,9 +19,12 @@ Open `http://localhost:3000`. `curl localhost:3000/readyz` returns
 
 ## 2. Railway (recommended host)
 
-`railway.json` in the repository configures the service: the Dockerfile at the
-root is detected automatically, the deploy healthcheck is `/readyz`, the
-restart policy is on-failure, and there are 3 replicas.
+`railway.json` in the repository configures the service: it builds the
+`Dockerfile` at the root, the deploy healthcheck is `/readyz`, and the restart
+policy is on-failure. It deliberately does **not** set a replica count: the
+limit depends on your Railway plan, and a config asking for more replicas than
+the plan allows makes every deploy fail. Set replicas in the dashboard
+(service → Settings → Deploy).
 
 ### Steps
 
@@ -29,22 +32,27 @@ restart policy is on-failure, and there are 3 replicas.
    select this repository. Railway builds the `Dockerfile` and applies
    `railway.json`.
 2. **Set variables** (service → Variables). `PORT` is set by Railway; do not
-   override it.
+   override it. Nothing is required: the app starts with safe defaults.
 
    | Variable | Value | Why |
    |---|---|---|
-   | `ENGINE_POOL_SIZE` | `2` | Containers can report the host's core count; without this the default is capped at 4 |
+   | `TRUST_PROXY` | `1` (Railway only) or `2` (Cloudflare in front) | Proxy hops trusted for the real client IP; wrong values make rate limits per-proxy or spoofable. Default `1` |
    | `LOG_FORMAT` | `json` | One JSON line per log entry; each line includes the replica id |
-   | `ROUTE_CACHE_MAX_MB` | `256` | Route cache memory budget |
-   | `SMALL_CACHE_MAX_MB` | `32` | Schedule and station cache budgets |
-   | `TRUST_PROXY` | `1` (Railway only) or `2` (Cloudflare in front) | Proxy hops trusted for the real client IP; wrong values make rate limits per-proxy or spoofable |
+   | `PDF_BASE_URL` | e.g. `https://storage.example.com/pdfs` | Optional. Enables the "Download PDF" button on schedules; PDFs are not in the repository |
+   | `ENGINE_POOL_SIZE` | your vCPU count, e.g. `2` | Optional. The default is sized to the container's memory limit (512 MB → 3, ≥ 1 GB → 4) |
+
+   Cache budgets (`ROUTE_CACHE_MAX_MB`, `SMALL_CACHE_MAX_MB`) also default to
+   a share of the memory limit (512 MB → 128 / 15 MB; ≥ 1 GB → 256 / 32 MB),
+   so a replica fits its memory without tuning. The startup log line
+   `server listening` shows the values in use.
 
 3. **Resources.** Give each replica about **2 vCPU and 1 GB memory** if your
    plan allows; that is the size `docs/CAPACITY.md` measured (~1,900 req/s
-   per replica). Memory use stays under ~510 MB with the default budgets.
-4. **Replicas.** `railway.json` asks for 3 (high availability). Raise the
-   count for more capacity: ~1,140 req/s per replica at a 60% target. Replica
-   limits depend on your Railway plan.
+   per replica). A 512 MB replica also works: it was measured at ~380 MB
+   with a full route cache.
+4. **Replicas.** Set the count in the dashboard: 2–3 for high availability
+   if your plan allows, more for capacity (~1,140 req/s per replica at a 60%
+   target).
 5. **Deploy and check.** Open `https://<your-service>.up.railway.app/readyz`.
    To confirm all replicas serve traffic:
 
@@ -96,7 +104,9 @@ at the edge and never reach Railway. The API is built for this:
 
 - successful route, trade-off, schedule, station and category responses send
   `Cache-Control: public, max-age=…`;
-- health, readiness, metrics, live status and **every error** send
+- live status (a timetable estimate that changes each minute) sends
+  `max-age=30`;
+- health, readiness, metrics and **every error** send
   `Cache-Control: no-store`, so the edge never caches a failure;
 - hashed frontend assets are `immutable`, and `index.html` is `no-cache`, so a
   deploy never leaves users with a stale page;

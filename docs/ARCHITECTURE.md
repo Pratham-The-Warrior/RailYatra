@@ -89,11 +89,11 @@ instead of silently falling back.
 | Variable | Default | Purpose |
 |---|---|---|
 | `PORT` | 3000 | HTTP port |
-| `ENGINE_POOL_SIZE` | min(4, CPU cores) | Engine processes per instance (set it explicitly in containers) |
+| `ENGINE_POOL_SIZE` | min(4, cores, 35% of memory ÷ 55 MB) | Engine processes per instance. Memory is the container limit (`process.constrainedMemory()`), so a 512 MB replica gets 3 |
 | `ENGINE_TIMEOUT_MS` | 10000 | Per-request engine timeout |
 | `ENGINE_MAX_QUEUE` | 200 | In-flight requests per engine before shedding with 503 |
 | `ROUTE_CACHE_SIZE` / `ROUTE_CACHE_TTL_MS` | 50000 / 30 min | Route cache entry limit and lifetime |
-| `ROUTE_CACHE_MAX_MB` / `SMALL_CACHE_MAX_MB` | 256 / 32 | Cache memory budgets (route; schedule and stations) |
+| `ROUTE_CACHE_MAX_MB` / `SMALL_CACHE_MAX_MB` | 25% / 3% of memory, max 256 / 32 | Cache memory budgets (route; schedule, stations and live-status timetables) |
 | `TRAIN_DATA_PATH` | `master_train_data.json` | Timetable file loaded by the engines |
 | `REFERENCE_DATA_DIR` | project root | Where `stations.json`, `city_stations.json`, category files live |
 | `ROUTING_ADAPTER` | `local` | RoutingPort implementation |
@@ -103,12 +103,16 @@ instead of silently falling back.
 | `RATE_LIMIT_RPS` / `RATE_LIMIT_BURST` | 50 / 200 | Per-client API request limit |
 | `ENGINE_RATE_LIMIT_RPS` / `ENGINE_RATE_LIMIT_BURST` | 5 / 30 | Per-client limit on uncached searches (engine work) |
 | `INSTANCE_ID` | `RAILWAY_REPLICA_ID` or random | Instance id in logs, `/api/health` and the `X-Instance-Id` header |
+| `PDF_BASE_URL` | unset | Base URL of hosted schedule PDFs (`train_schedule_NNNNN.pdf`); without it PDFs are served from `train_pdf/` if present |
+
+The `server listening` log line at startup shows the engine count, memory limit and cache budgets in use.
 
 ## Testing
 
 | Layer | Command |
 |---|---|
-| Backend (integration, architecture, API contract) | `cd backend && npm test` |
+| Backend (integration, architecture, API contract, live status) | `cd backend && npm test` |
+| Frontend | `cd frontend && npm test` |
 | Engine correctness | `python3 engine/tests/validate_pareto.py 150 1` |
 | Engine protocol stability | `python3 engine/tests/golden_protocol.py <ref> <candidate>` |
 | Data pipeline | `python3 -m unittest discover -s datapipe/tests -t .` and `python3 -m datapipe check` |
