@@ -66,7 +66,7 @@ Dense card variant for the desktop 3-column grid layout. Same data as RouteCard 
 Toggle switch between list and card view layouts. Only shown on desktop.
 
 ### Footer.tsx
-Static, no logic.
+Props: `onNavigate`. Quick links navigate in-app (Home, Train Schedules, Live Status); Support and Connect link to the GitHub repo, its issues and the developer's LinkedIn (`src/config/links.ts`).
 
 ## Pages
 
@@ -75,20 +75,20 @@ State: `routes[]`, `loading`, `error`, `searched`, `recentSearches[]`, `viewLayo
 
 Sections:
 1. Hero — heading, tagline, SearchForm, decorative blur blobs
-2. Quick Services — 2 cards (Schedules, Live Status) in a 4-col grid (2 slots empty)
+2. Quick Services — 2 cards (Schedules, Live Status)
 3. Recent Searches — from localStorage (`railyatra_recent_searches`), max 5, clickable to re-run
-4. Special Trains — 3 cards (Vande Bharat, Tejas, Gatiman). "View Routes" navigates to category-routes. "View all collections" is a dead link. Heart button does nothing.
+4. Special Trains — 3 cards (Vande Bharat, Tejas, Gatiman). "View Routes" navigates to `/category/:id`.
 5. Results — list or grid of RouteCard/RouteCardCompact, toggled by LayoutToggle. Scrolls to #results after fetch.
 6. Load More — engine fetches up to 50 routes but only `visibleCount` (starts at 10) are rendered. "Load More" button adds 10 more. Shows "All N routes displayed" when done.
 
-API: POST /api/route with SearchParams body. Two try/catch blocks for network and JSON parse errors.
+API: GET `/api/route?...` (CDN-cacheable) via `api/endpoints.ts`, which retries 429/503 (honouring `Retry-After`) and network errors. The "Best trade-offs" panel loads `/api/route/pareto` independently.
 
 ### Schedules.tsx
 State: `trainNumber`, `loading`, `schedule`, `error`, `recents[]`. Orchestrator that delegates to components in `src/components/Schedules/`.
 
 4 render states: Landing (!schedule && !loading), Loading, Error, Results (schedule !== null).
 
-Landing has search bar, popular trains (hardcoded), recent searches from localStorage. Results show train header, amenity strip (static/hardcoded), responsive timetable (5-col desktop, 2-col mobile), journey stats sidebar, and a decorative SVG route visualizer.
+Landing has search bar, popular trains (hardcoded), recent searches from localStorage. Results show train header with actions (Check Availability → IRCTC, Live Status → `/live-status/:train`, Download PDF when `pdfUrl` is set), responsive timetable (5-col desktop, 2-col mobile), journey stats sidebar with a "Report an Issue" link, and a decorative SVG route visualizer. The "Check PNR Status" card links to the official Indian Railways enquiry site.
 
 Helper functions: `computeHalt()` (handles midnight crossing), `titleCase()` (duplicated across multiple files).
 

@@ -43,8 +43,10 @@ Bigger instances add little: earlier 4-vCPU runs reached about the same throughp
 (~2,000 req/s), though the load generator shared those cores, so treat that as indicative.
 
 **Memory:** 184 MB measured after load (gateway 77 MB, 2 engines 107 MB). Caches
-are byte-budgeted (route 256 MB, schedule 32 MB, stations 32 MB; enforced and
-exported as `railyatra_cache_bytes`), so the worst case is ~510 MB, which gives a
+are byte-budgeted (route 256 MB, schedule 32 MB, stations 32 MB at ≥ 1 GB;
+smaller defaults below that, e.g. 128 / 15 / 15 MB at 512 MB, measured at
+~380 MB under a cache-filling load; enforced and exported as
+`railyatra_cache_bytes`), so the worst case with full budgets is ~510 MB, which gives a
 768 Mi limit. Before the budget, the route cache was bounded only by entry count
 (50,000 × ~35 KB ≈ 1.7 GB, an out-of-memory risk under cache-hostile traffic).
 
